@@ -38,7 +38,46 @@ export async function askThePheo(userMessage: string, history: Array<{ sender: s
   const seriesList = storage.getSeries();
   const hallOfFame = storage.getHallOfFame();
 
-  // If user provided a Gemini API Key, try calling the live Gemini API
+  // First try to call the backend API (which uses Vectorize RAG)
+  try {
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: userMessage,
+        history: history.slice(-10) // Keep last 10 messages for context
+      })
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      const text = data.reply;
+      if (text) {
+        const lowerMsg = userMessage.toLowerCase();
+        let suggestedCombo = undefined;
+        let qrData = undefined;
+
+        // If user specifically confirms order / payment
+        if (lowerMsg.includes('chốt đơn') || lowerMsg.includes('thanh toán') || lowerMsg.includes('chốt combo')) {
+          const resolved = resolveTargetSeriesAndBoxes(userMessage, seriesList);
+          qrData = processDirectChatOrder(resolved.series, resolved.boxes);
+        } else if (lowerMsg.includes('combo') || lowerMsg.includes('hộp') || lowerMsg.includes('skullpanda') || lowerMsg.includes('crybaby') || lowerMsg.includes('gundam')) {
+          suggestedCombo = buildComboSuggestion(userMessage, seriesList);
+        }
+
+        return {
+          reply: text,
+          badge: 'Quẻ Linh Ứng ✨💖',
+          suggestedCombo,
+          qrData
+        };
+      }
+    }
+  } catch (err) {
+    console.warn('Backend API call failed, trying direct Gemini API:', err);
+  }
+
+  // Fallback: If user provided a Gemini API Key, try calling the live Gemini API directly
   if (apiKey) {
     try {
       const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
@@ -68,7 +107,6 @@ export async function askThePheo(userMessage: string, history: Array<{ sender: s
           let suggestedCombo = undefined;
           let qrData = undefined;
 
-          // If user specifically confirms order / payment
           if (lowerMsg.includes('chốt đơn') || lowerMsg.includes('thanh toán') || lowerMsg.includes('chốt combo')) {
             const resolved = resolveTargetSeriesAndBoxes(userMessage, seriesList);
             qrData = processDirectChatOrder(resolved.series, resolved.boxes);
@@ -78,7 +116,7 @@ export async function askThePheo(userMessage: string, history: Array<{ sender: s
 
           return {
             reply: text,
-            badge: 'Quẻ Linh Ứng ✨',
+            badge: 'Quẻ Linh Ứng ✨💖',
             suggestedCombo,
             qrData
           };
@@ -180,8 +218,8 @@ function generateThePheoLocalResponse(
     const qrData = processDirectChatOrder(series, boxes);
 
     return {
-      reply: `🎉 **LỆNH BỐC HỘP ĐÃ KÍCH HOẠT!** \n\nThầy đã khóa linh khí và giữ tạm **${boxes.length} hộp (${boxes.map(b => 'Hộp #' + b).join(', ')})** thuộc series **${series.name}** cho thí chủ.\n\nTổng duyên phí: **${formatVND(qrData.amount)}**.\nThí chủ hãy quét mã VietQR bên dưới để hoàn tất giao dịch. Tiệm Thầy Phẻo sẽ bọc chống sốc 3 lớp nguyên seal và giao tận tay thí chủ!`,
-      badge: 'Chốt Đơn Thành Công 📦',
+      reply: `🎉 **LỆNH BỐC HỘP ĐÃ KÍCH HOẠT!** 🎀\n\nThầy đã khóa linh khí và giữ tạm **${boxes.length} hộp (${boxes.map(b => 'Hộp #' + b).join(', ')})** thuộc series **${series.name}** cho thí chủ.\n\nTổng duyên phí: **${formatVND(qrData.amount)}**.\nThí chủ hãy quét mã VietQR bên dưới để hoàn tất giao dịch. Tiệm Thầy Phẻo sẽ bọc chống sốc 3 lớp nguyên seal và giao tận tay thí chủ! 💖`,
+      badge: 'Chốt Đơn Thành Công 📦✨',
       qrData
     };
   }
@@ -190,15 +228,15 @@ function generateThePheoLocalResponse(
   if (msg.includes('quẻ') || msg.includes('phong thủy') || msg.includes('vận may') || msg.includes('mệnh') || msg.includes('soi')) {
     const quesy = [
       {
-        name: 'Quẻ Đại Cát: Kim Tinh Phát Lộc 🪙',
-        text: 'Thầy vừa bấm độn can chi: Hôm nay kim khí cực vượng, rất hợp để thí chủ bốc các dòng có chi tiết kim loại hoặc lấp lánh như **SKULLPANDA The Warmth** hoặc **GUNDAM Universe Gold Armor**!\n\n👉 Thầy khuyên thí chủ nhắm chuẩn các hộp số lẻ nằm ở góc Tây Bắc của khay. Vía nổ Secret 1/144 đang bao trùm!'
+        name: 'Quẻ Đại Cát: Kim Tinh Phát Lộc 🪙💖',
+        text: 'Thầy vừa bấm độn can chi: Hôm nay kim khí cực vượng, rất hợp để thí chủ bốc các dòng có chi tiết kim loại hoặc lấp lánh như **SKULLPANDA The Warmth** hoặc **GUNDAM Universe Gold Armor**!\n\n👉 Thầy khuyên thí chủ nhắm chuẩn các hộp số lẻ nằm ở góc Tây Bắc của khay. Vía nổ Secret 1/144 đang bao trùm! ✨'
       },
       {
-        name: 'Quẻ Thượng Cát: Thủy Hỏa Ký Tế 🌊🔥',
+        name: 'Quẻ Thượng Cát: Thủy Hỏa Ký Tế 🌊🔥💖',
         text: 'Linh khí báo điềm lành! Tâm trạng thí chủ đang đồng điệu với series **CRYBABY Sunset Concert**. Dòng nước mắt nghệ thuật của Crybaby sẽ xua tan vận xui và kéo vía Secret về ví!\n\n👉 Giờ hoàng đạo bốc hộp: **11h - 13h hoặc 19h - 21h**.'
       },
       {
-        name: 'Quẻ Thần Tài: Độc Đắc Hóa Long 🐉',
+        name: 'Quẻ Thần Tài: Độc Đắc Hóa Long 🐉💖',
         text: 'Quẻ chỉ rõ: Thí chủ không nên bốc lẻ 1 hộp dễ bị vía nặng kẹp lại! Hãy gắp ngay **Combo 3 Hộp (Tam Hoa Tụ Đỉnh)** hoặc **Combo 5 Hộp (Ngũ Hành Tương Sinh)** để vét sạch các con hiếm!\n\n👉 Series tiến cử: **HIRONO City of Mercy** hoặc **DIMOO Animal Kingdom**.'
       }
     ];
@@ -206,7 +244,7 @@ function generateThePheoLocalResponse(
     const combo = buildComboSuggestion(userMessage, seriesList);
 
     return {
-      reply: `🎴 **THẦY PHẺO GIEO QUẺ KHAI TÂM:**\n\n${picked.text}\n\nThầy đã chuẩn bị sẵn bộ Combo vía cực tốt bên dưới, thí chủ xem quẻ có muốn chốt hạ luôn không?`,
+      reply: `🎴 **THẦY PHẺO GIEO QUẺ KHAI TÂM:** 💖\n\n${picked.text}\n\nThầy đã chuẩn bị sẵn bộ Combo vía cực tốt bên dưới, thí chủ xem quẻ có muốn chốt hạ luôn không? ✨`,
       badge: picked.name,
       suggestedCombo: combo
     };
@@ -217,8 +255,8 @@ function generateThePheoLocalResponse(
     const hofRecent = hallOfFame[0];
     const combo = buildComboSuggestion(userMessage, seriesList);
     return {
-      reply: `👁️ **BÍ MẬT NỔ SECRET TỪ THẦY PHẺO:**\n\nThông thường một thùng Blind Box có tỉ lệ Secret là **1/144** (khoảng 0.69%) hoặc **1/72** đối với Gundam. Nhưng dân chơi có kinh nghiệm không bao giờ bốc mù quáng!\n\n${hofRecent ? `Minh chứng rõ ràng: Hôm trước đạo hữu **${hofRecent.customer_name}** nghe lời Thầy bốc **${hofRecent.series_name}** (Hộp #${hofRecent.box_number}) nổ ngay **${hofRecent.item_won}**!` : ''}\n\n💡 **Mẹo của Thầy:** Bốc Combo từ 3 hộp trở lên cùng một set nguyên seal, xác suất trúng nhân vật đặc biệt tăng gấp 4 lần so với mua rải rác!`,
-      badge: 'Bí Kíp Săn Secret 💎',
+      reply: `👁️ **BÍ MẬT NỔ SECRET TỪ THẦY PHẺO:** 💖\n\nThông thường một thùng Blind Box có tỉ lệ Secret là **1/144** (khoảng 0.69%) hoặc **1/72** đối với Gundam. Nhưng dân chơi có kinh nghiệm không bao giờ bốc mù quáng!\n\n${hofRecent ? `Minh chứng rõ ràng: Hôm trước đạo hữu **${hofRecent.customer_name}** nghe lời Thầy bốc **${hofRecent.series_name}** (Hộp #${hofRecent.box_number}) nổ ngay **${hofRecent.item_won}**!` : ''}\n\n💡 **Mẹo của Thầy:** Bốc Combo từ 3 hộp trở lên cùng một set nguyên seal, xác suất trúng nhân vật đặc biệt tăng gấp 4 lần so với mua rải rác! ✨`,
+      badge: 'Bí Kíp Săn Secret 💎💖',
       suggestedCombo: combo
     };
   }
@@ -227,8 +265,8 @@ function generateThePheoLocalResponse(
   if (msg.includes('skullpanda') || msg.includes('crybaby') || msg.includes('gundam') || msg.includes('dimoo') || msg.includes('hirono')) {
     const combo = buildComboSuggestion(userMessage, seriesList);
     return {
-      reply: `✨ **TƯ VẤN ĐỘC BẢN SERIES ${combo.seriesName.toUpperCase()}:**\n\nThầy quan sát thấy khay **${combo.seriesName}** hiện chỉ còn **vài hộp chưa mở**. Vị trí linh nghiệm nhất đang dồn vào các hộp: **${combo.boxNumbers.map(b => `Hộp #${b}`).join(', ')}**!\n\nĐặc biệt con Secret của series này mang linh lực rất mạnh, người sở hữu sẽ thu hút tài lộc và vận may bất ngờ. Thí chủ có muốn Thầy bốc giữ ngay combo này không?`,
-      badge: 'Khuyên Dùng Hoàng Đạo 🌟',
+      reply: `✨ **TƯ VẤN ĐỘC BẢN SERIES ${combo.seriesName.toUpperCase()}:** 💖\n\nThầy quan sát thấy khay **${combo.seriesName}** hiện chỉ còn **vài hộp chưa mở**. Vị trí linh nghiệm nhất đang dồn vào các hộp: **${combo.boxNumbers.map(b => `Hộp #${b}`).join(', ')}**!\n\nĐặc biệt con Secret của series này mang linh lực rất mạnh, người sở hữu sẽ thu hút tài lộc và vận may bất ngờ. Thí chủ có muốn Thầy bốc giữ ngay combo này không? ✨`,
+      badge: 'Khuyên Dùng Hoàng Đạo 🌟💖',
       suggestedCombo: combo
     };
   }
@@ -236,8 +274,8 @@ function generateThePheoLocalResponse(
   // 5. Default welcoming response
   const combo = buildComboSuggestion(userMessage, seriesList);
   return {
-    reply: `🔮 **A Di Đà Phật! Thầy Phẻo xin kính chào thí chủ!**\n\nThầy ở đây để soi quẻ phong thủy, xem vía bốc hộp mù (Blind Box) và trợ lực cho thí chủ săn trúng nhân vật ẩn **SECRET 1/144** độc nhất vô nhị!\n\nThí chủ muốn Thầy:\n1. 🎴 **Gieo quẻ phong thủy** xem hôm nay hợp màu gì, bốc dòng nào?\n2. 📦 **Tư vấn Combo 3-5 hộp** Skullpanda hay Crybaby dễ nổ Secret nhất?\n3. 🏆 **Xem khách vừa trúng Secret** gần đây để lấy vía thơm?\n\nCứ tự nhiên giãi bày cùng Thầy nhé!`,
-    badge: 'Thầy Phẻo Đang Trực 🔮',
+    reply: `🔮 **A Di Đà Phật! Thầy Phẻo xin kính chào thí chủ!** 🎀✨\n\nThầy ở đây để soi quẻ phong thủy, xem vía bốc hộp mù (Blind Box) và trợ lực cho thí chủ săn trúng nhân vật ẩn **SECRET 1/144** độc nhất vô nhị!\n\nThí chủ muốn Thầy:\n1. 🎴 **Gieo quẻ phong thủy** xem hôm nay hợp màu gì, bốc dòng nào?\n2. 📦 **Tư vấn Combo 3-5 hộp** Skullpanda hay Crybaby dễ nổ Secret nhất?\n3. 🏆 **Xem khách vừa trúng Secret** gần đây để lấy vía thơm?\n\nCứ tự nhiên giãi bày cùng Thầy nhé! 💖`,
+    badge: 'Thầy Phẻo Đang Trực 🔮💖',
     suggestedCombo: combo
   };
 }

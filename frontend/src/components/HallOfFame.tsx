@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { HallOfFameItem } from '../types';
-import { Trophy, Sparkles, Star, Bot } from 'lucide-react';
+import { Trophy, Sparkles, Star, Bot, Heart, Crown, WandSparkles, Gift, ShieldCheck, Zap } from 'lucide-react';
 
 interface HallOfFameProps {
   items: HallOfFameItem[];
@@ -16,122 +16,149 @@ export const HallOfFame: React.FC<HallOfFameProps> = ({
   const displayedItems = filterSecretOnly
     ? items.filter(it => it.is_secret)
     : items;
+  const secretCount = items.filter(i => i.is_secret).length;
 
   return (
-    <section className="py-14 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-t border-white/[0.06]">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
-        <div>
-          <div className="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">
-            Community & Pulls
+    <section className="py-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Cute Floating Decorations */}
+      <div className="hidden lg:block absolute top-10 -left-5 w-12 h-12 animate-float-gentle pointer-events-none">
+        <span className="text-5xl">🎀</span>
+      </div>
+      <div className="hidden lg:block absolute top-20 -right-5 w-10 h-10 animate-float-gentle pointer-events-none" style={{ animationDelay: '1s' }}>
+        <span className="text-4xl">✨</span>
+      </div>
+
+      {/* Header - Cute */}
+      <div className="relative flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+        <div className="text-center md:text-left">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-cute-full bg-white/80 border-2 border-pink-200/50 text-pink-700 text-xs font-semibold shadow-cute mb-4 animate-bounce-cute">
+            <span className="heart-decoration">💖</span>
+            <span>Community & Pulls</span>
+            <span className="text-pink-300">✨</span>
+            <span className="text-peach-500 font-bold">Hall of Fame 🏆</span>
+            <span className="star-decoration">⭐</span>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-display font-bold text-white tracking-tight">
-            Hall of Fame (Chiến Tích Nổ Secret)
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-display font-extrabold text-pink-800 tracking-tight text-gradient-cute">
+            Hall of Fame (Chiến Tích Nổ Secret) 🏆
           </h2>
-          <p className="text-slate-400 text-xs sm:text-sm mt-1">
-            Các khoảnh khắc khui hàng trúng Secret Chase 1/144 của cộng đồng người sưu tầm
+          <p className="text-pink-500 text-sm mt-2 max-w-md">
+            Các khoảnh khắc khui hàng trúng Secret Chase 1/144 của cộng đồng người sưu tầm! 💖
           </p>
         </div>
 
-        {/* Filter Toggle */}
-        <div className="flex items-center gap-1.5 p-1 bg-[#0b0e17] rounded-xl border border-white/[0.08]">
+        {/* Filter Toggle - Cute */}
+        <div className="flex items-center gap-2 p-2 bg-white/80 rounded-cute-lg border-2 border-pink-200/50 shadow-cute">
           <button
             onClick={() => setFilterSecretOnly(false)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+            className={`px-4 py-2 rounded-cute text-xs font-semibold transition-all flex items-center gap-1.5 ${
               !filterSecretOnly
-                ? 'bg-white text-slate-950 font-bold shadow-sm'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-cute-gradient text-pink-700 shadow-cute border border-pink-300/50'
+                : 'text-pink-500 hover:text-pink-700 hover:bg-pink-50/50'
             }`}
           >
+            <Trophy className="w-3.5 h-3.5" />
             Tất Cả ({items.length})
           </button>
           <button
             onClick={() => setFilterSecretOnly(true)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+            className={`px-4 py-2 rounded-cute text-xs font-semibold transition-all flex items-center gap-1.5 ${
               filterSecretOnly
-                ? 'bg-amber-500 text-slate-950 font-black shadow-sm'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-cute'
+                : 'text-pink-500 hover:text-pink-700 hover:bg-pink-50/50'
             }`}
           >
-            Chỉ Xem Secret ({items.filter(i => i.is_secret).length})
+            <Sparkles className="w-3.5 h-3.5 animate-bounce-cute" />
+            Chỉ Xem Secret ({secretCount})
           </button>
         </div>
       </div>
 
-      {/* Grid of Testimonials */}
+      {/* Grid of Testimonials - Cute */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {displayedItems.map((item) => (
           <div
             key={item.id}
-            className="surface-card rounded-2xl p-5 flex flex-col justify-between transition-all duration-300 hover:shadow-card group"
+            className="surface-cute-elevated p-5 flex flex-col justify-between transition-all duration-500 hover:shadow-cute-lg group animate-pop-in"
+            style={{ animationDelay: `${Math.random() * 200}ms` }}
           >
             <div>
-              {/* Top Row: Series & Box # */}
-              <div className="flex items-center justify-between mb-3.5">
-                <span className="text-[11px] font-mono text-slate-400 bg-white/[0.04] px-2 py-0.5 rounded border border-white/[0.06]">
+              {/* Top Row: Series & Box # - Cute */}
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-xs font-mono text-pink-500 bg-pink-100 px-3 py-1 rounded-cute-full border border-pink-200/50">
                   Hộp #{item.box_number}
                 </span>
 
                 {item.is_secret && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 text-[10px] font-bold border border-amber-500/30">
-                    <Sparkles className="w-3 h-3 text-amber-400" />
+                  <span className="badge-cute-secret inline-flex items-center gap-1.5 px-3 py-1.5 rounded-cute-full text-xs font-bold">
+                    <Sparkles className="w-3.5 h-3.5 animate-bounce-cute" />
                     SECRET 1/144
+                    <Sparkles className="w-3.5 h-3.5 animate-bounce-cute" />
                   </span>
                 )}
               </div>
 
-              {/* Photo & Item Name */}
-              <div className="flex gap-3.5 items-center mb-4">
-                <div className="w-14 h-14 rounded-xl overflow-hidden bg-slate-950 border border-white/10 shrink-0">
+              {/* Photo & Item Name - Cute */}
+              <div className="flex gap-4 items-center mb-4">
+                <div className="w-16 h-16 rounded-cute-lg overflow-hidden bg-cute-gradient border-2 border-pink-200/50 shrink-0 img-frame-cute">
                   <img
                     src={item.image_url}
                     alt={item.item_won}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                   />
                 </div>
-                <div>
-                  <h4 className="text-sm font-bold text-white group-hover:text-amber-300 transition-colors">
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-sm font-extrabold text-pink-800 group-hover:text-pink-600 transition-colors truncate">
                     {item.item_won}
                   </h4>
-                  <div className="text-xs text-slate-400 mt-0.5">
+                  <div className="text-xs text-pink-500 mt-1 truncate">
                     {item.series_name}
                   </div>
-                  <div className="flex items-center gap-1 text-amber-400 mt-1">
+                  <div className="flex items-center gap-1 text-yellow-400 mt-1.5">
                     {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="w-2.5 h-2.5 fill-amber-400" />
+                      <Star key={i} className="w-4 h-4 fill-yellow-400" />
                     ))}
                   </div>
                 </div>
               </div>
 
-              {/* Customer Comment Quote */}
-              <blockquote className="text-slate-300 text-xs italic bg-[#080a12] p-3 rounded-xl border border-white/[0.05] leading-relaxed">
+              {/* Customer Comment Quote - Cute */}
+              <blockquote className="text-pink-600 text-sm italic surface-cute p-4 rounded-cute-lg border border-pink-200/50 leading-relaxed">
                 “{item.comment}”
               </blockquote>
             </div>
 
-            {/* Footer with customer info & "Xin Vía" button */}
-            <div className="mt-4 pt-3 border-t border-white/[0.06] flex items-center justify-between">
+            {/* Footer with customer info & "Xin Vía" button - Cute */}
+            <div className="mt-4 pt-4 border-t border-pink-200/50 flex items-center justify-between">
               <div>
-                <div className="text-xs font-semibold text-slate-200">
+                <div className="text-sm font-extrabold text-pink-700 flex items-center gap-1">
+                  <Crown className="w-4 h-4" />
                   {item.customer_name}
                 </div>
-                <div className="text-[10px] text-slate-500">
+                <div className="text-xs text-pink-400 flex items-center gap-1">
+                  <WandSparkles className="w-3.5 h-3.5" />
                   {item.created_at || 'Gần đây'}
                 </div>
               </div>
 
               <button
                 onClick={() => onAskAiForLuckyVibe(item)}
-                className="px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-amber-300 text-xs font-medium transition-colors flex items-center gap-1"
+                className="btn-cute-lavender px-3 py-1.5 text-xs flex items-center gap-1.5"
               >
-                <Bot className="w-3.5 h-3.5" />
-                Xin vía
+                <WandSparkles className="w-3.5 h-3.5 animate-wiggle" />
+                Xin Vía 🔮
               </button>
             </div>
           </div>
         ))}
       </div>
+
+      {displayedItems.length === 0 && (
+        <div className="surface-cute p-12 text-center animate-pop-in">
+          <div className="text-6xl mb-4">🥺</div>
+          <h3 className="text-xl font-bold text-pink-600 mb-2">Chưa có chiến tích nào!</h3>
+          <p className="text-pink-400">Hãy là người đầu tiên nổ Secret và đăng ký Hall of Fame nhé! 💖</p>
+        </div>
+      )}
     </section>
   );
 };

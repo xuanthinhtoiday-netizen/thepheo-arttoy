@@ -1,7 +1,7 @@
 import React from 'react';
 import { CartItem } from '../types';
 import { formatVND } from '../services/vietqr';
-import { X, Trash2, ShoppingBag, ArrowRight, Box } from 'lucide-react';
+import { X, Trash2, ShoppingBag, ArrowRight, Box, Heart, Star, Sparkles, Gift, Crown, Zap, ShieldCheck } from 'lucide-react';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -21,77 +21,109 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   if (!isOpen) return null;
 
   const totalAmount = cartItems.reduce((sum, item) => sum + item.totalPrice, 0);
+  const totalBoxes = cartItems.reduce((sum, item) => sum + item.selectedBoxes.length, 0);
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/75 backdrop-blur-sm animate-fade-in">
-      <div className="w-full max-w-md bg-[#0b0e17] border-l border-white/10 h-full flex flex-col shadow-2xl">
-        {/* Header */}
-        <div className="p-5 border-b border-white/[0.08] flex items-center justify-between bg-[#080a12]">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-300">
-              <ShoppingBag className="w-4 h-4" />
+    <div className="fixed inset-0 z-50 flex justify-end bg-pink-900/30 backdrop-blur-sm animate-fade-in">
+      {/* Cute Floating Decorations */}
+      <div className="hidden lg:block absolute top-10 -left-5 w-12 h-12 animate-float-gentle pointer-events-none">
+        <span className="text-5xl">🎀</span>
+      </div>
+      <div className="hidden lg:block absolute top-30 -right-5 w-10 h-10 animate-float-gentle pointer-events-none" style={{ animationDelay: '1s' }}>
+        <span className="text-4xl">✨</span>
+      </div>
+
+      <div className="w-full max-w-md surface-cute-elevated border-l-2 border-pink-300/50 h-full flex flex-col shadow-glow-pink animate-pop-in">
+        {/* Header - Cute */}
+        <div className="p-5 border-b border-pink-200/50 flex items-center justify-between bg-cute-gradient/50">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-cute bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center text-white shadow-cute">
+              <ShoppingBag className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-bold text-sm text-white">Giỏ Hàng Art Toy</h3>
-              <p className="text-[11px] text-slate-500">{cartItems.length} mục đã chọn</p>
+              <h3 className="font-extrabold text-sm text-pink-800 text-gradient-cute">Giỏ Hàng Art Toy 🛍️</h3>
+              <p className="text-xs text-pink-500">{cartItems.length} series • {totalBoxes} hộp đã chọn</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white transition-colors"
+            className="btn-cute-ghost p-2"
           >
-            <X className="w-4 h-4" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Items List */}
+        {/* Items List - Cute */}
         <div className="flex-1 overflow-y-auto p-5 space-y-3">
           {cartItems.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-center text-slate-500 py-12">
-              <Box className="w-12 h-12 text-slate-700 mb-3" />
-              <p className="text-xs font-medium text-slate-400">Giỏ hàng đang trống</p>
-              <p className="text-[11px] text-slate-600 mt-1">Chọn hộp trên khay để thêm vào giỏ</p>
+            <div className="h-full flex flex-col items-center justify-center text-center text-pink-500 py-12 animate-bounce-cute">
+              <Gift className="w-16 h-16 text-pink-300 mb-4 animate-bounce-cute" />
+              <p className="text-sm font-semibold text-pink-600">Giỏ hàng đang trống 🥺</p>
+              <p className="text-xs text-pink-400 mt-1">Chọn hộp trên khay để thêm vào giỏ nhé! 💖</p>
+              <div className="mt-4 flex items-center gap-2">
+                <Heart className="w-4 h-4 animate-heartbeat" />
+                <Star className="w-4 h-4 animate-bounce-cute" />
+                <Sparkles className="w-4 h-4" />
+              </div>
             </div>
           ) : (
             cartItems.map((item, idx) => (
               <div
                 key={idx}
-                className="surface-card p-3.5 rounded-xl flex gap-3 items-center justify-between"
+                className="surface-cute p-4 rounded-cute-lg flex gap-3 items-center justify-between border-2 border-pink-200/50 animate-pop-in"
+                style={{ animationDelay: `${idx * 50}ms` }}
               >
-                <img
-                  src={item.series.image_url}
-                  alt={item.series.name}
-                  className="w-14 h-14 rounded-lg object-cover border border-white/10 shrink-0"
-                />
-                <div className="flex-1 overflow-hidden">
-                  <h4 className="text-xs font-bold text-white truncate">{item.series.name}</h4>
-                  <div className="text-[11px] text-slate-400 font-mono mt-0.5">
+                <div className="relative w-16 h-16 rounded-cute overflow-hidden flex-shrink-0 img-frame-cute">
+                  <img
+                    src={item.series.image_url}
+                    alt={item.series.name}
+                    className="w-full h-full object-cover"
+                  />
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-r from-rose-500 to-pink-500 text-white rounded-full flex items-center justify-center text-[10px] font-black shadow-cute">
+                    {item.selectedBoxes.length}
+                  </span>
+                </div>
+                <div className="flex-1 overflow-hidden min-w-0">
+                  <h4 className="text-sm font-extrabold text-pink-700 truncate">{item.series.name}</h4>
+                  <div className="text-xs text-pink-500 font-mono mt-1 flex items-center gap-1">
+                    <Box className="w-3 h-3" />
                     Hộp: {item.selectedBoxes.map(b => `#${b}`).join(', ')} ({item.selectedBoxes.length} hộp)
                   </div>
-                  <div className="text-xs font-bold text-amber-400 mt-1 font-display">
+                  <div className="text-sm font-extrabold text-gradient-peach mt-1 font-display">
                     {formatVND(item.totalPrice)}
                   </div>
                 </div>
                 <button
                   onClick={() => onRemoveItem(idx)}
-                  className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 transition-colors"
+                  className="btn-cute-ghost p-2 text-rose-500 hover:text-rose-600 hover:bg-rose-50/50"
                   title="Xóa"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
+                  <Trash2 className="w-4 h-4" />
                 </button>
               </div>
             ))
           )}
         </div>
 
-        {/* Footer Checkout Summary */}
+        {/* Footer Checkout Summary - Cute */}
         {cartItems.length > 0 && (
-          <div className="p-5 border-t border-white/[0.08] bg-[#080a12] space-y-4">
+          <div className="p-5 border-t border-pink-200/50 bg-cute-gradient/50 space-y-3 animate-pop-in">
             <div className="flex items-baseline justify-between">
-              <span className="text-xs text-slate-500">Tổng thanh toán:</span>
-              <span className="text-xl font-black text-amber-400 font-display">
+              <span className="text-sm text-pink-500">Tổng thanh toán:</span>
+              <span className="text-2xl font-extrabold text-gradient-peach font-display">
                 {formatVND(totalAmount)}
               </span>
+            </div>
+
+            <div className="surface-cute p-3 rounded-cute border border-pink-200/50">
+              <div className="flex items-center justify-between text-xs text-pink-500 mb-1">
+                <span>Số lượng hộp</span>
+                <span className="font-bold text-pink-700">{totalBoxes} hộp</span>
+              </div>
+              <div className="flex items-center justify-between text-xs text-pink-500">
+                <span>Series khác nhau</span>
+                <span className="font-bold text-pink-700">{cartItems.length} series</span>
+              </div>
             </div>
 
             <button
@@ -99,11 +131,17 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 onClose();
                 onProceedToCheckout();
               }}
-              className="w-full py-3 rounded-xl bg-white hover:bg-slate-200 text-slate-950 font-bold text-xs transition-all flex items-center justify-center gap-2 shadow-sm"
+              className="btn-cute-peach w-full py-3.5 text-sm flex items-center justify-center gap-3 shadow-glow-peach"
             >
-              Tiến Hành Thanh Toán & Quét VietQR
-              <ArrowRight className="w-3.5 h-3.5" />
+              <Zap className="w-4 h-4" />
+              Tiến Hành Thanh Toán & Quét VietQR ⚡
+              <ArrowRight className="w-4 h-4" />
             </button>
+
+            <p className="text-center text-xs text-pink-400 flex items-center justify-center gap-1">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              Thanh toán an toàn, xác nhận tức thì 24/7
+            </p>
           </div>
         )}
       </div>

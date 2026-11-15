@@ -9,10 +9,11 @@ database_name = "arttoy-db"
 database_id = "58c95db2-e776-49cd-85e8-99417ea3bd42"
 migrations_dir = "./migrations"
 
-# Cloudflare R2 Storage Binding for Art Toy Media
-[[r2_buckets]]
-binding = "MEDIA_BUCKET"
-bucket_name = "arttoy-media"
+# Cloudflare KV Storage Binding (replaces R2)
+[[kv_namespaces]]
+binding = "KV"
+id = "your-kv-namespace-id"
+preview_id = "your-kv-preview-id"
 
 # Environment Variables & AI Gateway settings
 [vars]

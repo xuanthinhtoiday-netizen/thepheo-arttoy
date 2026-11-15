@@ -1,12 +1,53 @@
 import express from 'express';
 import cors from 'cors';
+import crypto from 'crypto';
 import { INITIAL_SERIES, INITIAL_ORDERS, INITIAL_HALL_OF_FAME } from './data/mockData';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Admin auth (mo phong nhu Worker: mat khau tu env ADMIN_PASSWORD, session luu tam trong bo nho)
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'pheoarttoy2026';
+if (!process.env.ADMIN_PASSWORD) {
+  console.warn('[WARN] Dang dung ADMIN_PASSWORD mac dinh cho dev. Khi deploy hay dat: wrangler secret put ADMIN_PASSWORD');
+}
+const adminSessions = new Set<string>();
+
+function extractAdminToken(req: any): string {
+  const auth = req.headers?.authorization || '';
+  if (auth.startsWith('Bearer ')) return auth.slice(7).trim();
+  return '';
+}
+
+function requireAdmin(req: any, res: any, next: any) {
+  const token = extractAdminToken(req);
+  if (!adminSessions.has(token)) {
+    return res.status(401).json({ error: 'Yêu cầu đăng nhập admin! 🔐' });
+  }
+  next();
+}
+
 app.use(cors());
 app.use(express.json());
+
+// Admin login/logout (local dev simulator)
+app.post('/api/admin/login', (req, res) => {
+  const { password } = req.body || {};
+  if (password !== ADMIN_PASSWORD) {
+    return res.status(401).json({ error: 'Mật khẩu admin không đúng! 🔐' });
+  }
+  const token = crypto.randomUUID();
+  adminSessions.add(token);
+  res.setHeader('Set-Cookie', `thepheo_admin=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${60 * 60 * 24 * 7}`);
+  res.json({ success: true, token });
+});
+
+app.post('/api/admin/logout', (req, res) => {
+  const token = extractAdminToken(req);
+  if (token) adminSessions.delete(token);
+  res.setHeader('Set-Cookie', 'thepheo_admin=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0');
+  res.json({ success: true });
+});
 
 // In-memory / mock database matching Cloudflare D1
 let seriesDb = [...INITIAL_SERIES];
@@ -26,14 +67,14 @@ app.get('/api/series/:id', (req, res) => {
 });
 
 // 3. POST /api/series (Admin)
-app.post('/api/series', (req, res) => {
+app.post('/api/series', requireAdmin, (req, res) => {
   const newSeries = req.body;
   seriesDb.push(newSeries);
   res.status(201).json(newSeries);
 });
 
-// 4. GET /api/orders
-app.get('/api/orders', (req, res) => {
+// 4. GET /api/orders (Admin)
+app.get('/api/orders', requireAdmin, (req, res) => {
   res.json(ordersDb);
 });
 
@@ -65,8 +106,8 @@ app.post('/api/orders', (req, res) => {
   res.status(201).json(order);
 });
 
-// 6. PUT /api/orders/:id/status
-app.put('/api/orders/:id/status', (req, res) => {
+// 6. PUT /api/orders/:id/status (Admin)
+app.put('/api/orders/:id/status', requireAdmin, (req, res) => {
   const { status } = req.body;
   const order = ordersDb.find(o => o.id === req.params.id);
   if (!order) return res.status(404).json({ error: 'Order not found' });

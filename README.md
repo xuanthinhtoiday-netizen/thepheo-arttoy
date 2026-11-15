@@ -2,7 +2,7 @@
 
 > **Dự án:** Website Thương Mại Điện Tử Ngách "Mystery Box & Art Toy" Tích Hợp Chatbot AI và Hạ Tầng Cloudflare Serverless  
 > **AI Persona:** "Thầy Phẻo Gieo Quẻ Art Toy" (Soi vía bốc hộp, quẻ phong thủy, kích lộc Secret 1/144)  
-> **Hạ tầng:** Cloudflare Serverless Stack (Pages + Workers + D1 SQLite + R2 Storage + Google Gemini API Gateway)
+> **Hạ tầng:** Cloudflare Serverless Stack (Pages + Workers + D1 SQLite + KV Storage + Vectorize + Google Gemini API Gateway)
 
 ---
 
@@ -25,9 +25,14 @@
   - Điền thông tin giao hàng hoặc chốt đơn 1 chạm trực tiếp từ khung chat Thầy Phẻo.
   - Hệ thống tự động sinh mã VietQR Napas 24/7 kèm mã đơn và nội dung chuyển khoản chuẩn.
   - Tự động trừ tồn kho và cập nhật trạng thái đơn sang `PAID`.
+  - **Ghi nhớ thông tin khách hàng:** sau đơn hàng đầu tiên, hệ thống tự động lưu và prefill họ tên / SĐT / địa chỉ cho những lần mua sau — không cần điền lại 💖.
 
 ### 2. Phân hệ Quản trị (Admin Dashboard & Cloudflare D1)
-- **FR-05: Quản lý Kho hàng Blind Box (Inventory Management):**
+- **FR-05: Bảo vệ khu vực quản trị (Admin Auth):**
+  - Trang quản trị yêu cầu **mật khẩu đăng nhập** — không ai vào được nếu không có password.
+  - Mật khẩu lưu bí mật trên Cloudflare (`wrangler secret put ADMIN_PASSWORD`), so sánh hằng thời gian (timing-safe), session lưu trong KV với TTL 7 ngày.
+  - Các API quản trị (`POST /api/series`, `GET /api/orders`, `PUT /api/orders/:id/status`, `POST /api/vectorize/reindex`) đều yêu cầu Bearer token phiên làm việc.
+- **FR-05b: Quản lý Kho hàng Blind Box (Inventory Management):**
   - Thêm mới Series vào cơ sở dữ liệu Cloudflare D1.
   - Tăng/giảm số hộp tồn kho thời gian thực.
   - Thiết lập tỷ lệ drop rate và nhân vật ẩn.
@@ -68,6 +73,11 @@ npm run dev
 👉 Mở trình duyệt truy cập: **`http://localhost:3000`**
 
 *(Nếu muốn chạy cả máy chủ API backend song song: `npm run start`)*
+
+### Mật khẩu admin khi dev local
+- Backend express simulator dùng `ADMIN_PASSWORD` từ biến môi trường, mặc định dev là `pheoarttoy2026` (đổi trong `.env` khi deploy).
+- Nếu chỉ chạy frontend mà không có backend, đặt `VITE_ADMIN_PASSWORD` trong file `.env` để dùng cổng đăng nhập local.
+- Khi chạy `npx wrangler dev`, đặt `ADMIN_PASSWORD` trong file `backend/.dev.vars` (đã gitignore).
 
 ---
 

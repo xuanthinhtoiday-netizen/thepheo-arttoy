@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import confetti from 'canvas-confetti';
 import { Series, SeriesItem } from '../types';
-import { Trophy, ArrowRight, RotateCcw, Box, Sparkles } from 'lucide-react';
+import { Trophy, ArrowRight, RotateCcw, Box, Sparkles, Heart, Star, WandSparkles, Gift, Crown, Sparkle } from 'lucide-react';
 import { storage } from '../services/storage';
 
 interface UnboxSimulatorProps {
@@ -52,23 +52,23 @@ export const UnboxSimulator: React.FC<UnboxSimulatorProps> = ({
   };
 
   const triggerSecretFireworks = () => {
-    const duration = 2.5 * 1000;
+    const duration = 3 * 1000;
     const end = Date.now() + duration;
 
     (function frame() {
       confetti({
-        particleCount: 5,
+        particleCount: 8,
         angle: 60,
-        spread: 55,
+        spread: 70,
         origin: { x: 0 },
-        colors: ['#e5b869', '#ffffff', '#6366f1']
+        colors: ['#ec4899', '#f472b6', '#f9a8d4', '#a855f7', '#fb923c']
       });
       confetti({
-        particleCount: 5,
+        particleCount: 8,
         angle: 120,
-        spread: 55,
+        spread: 70,
         origin: { x: 1 },
-        colors: ['#e5b869', '#ffffff', '#6366f1']
+        colors: ['#ec4899', '#f472b6', '#f9a8d4', '#a855f7', '#fb923c']
       });
 
       if (Date.now() < end) {
@@ -79,9 +79,10 @@ export const UnboxSimulator: React.FC<UnboxSimulatorProps> = ({
 
   const triggerNormalConfetti = () => {
     confetti({
-      particleCount: 60,
-      spread: 60,
-      origin: { y: 0.6 }
+      particleCount: 80,
+      spread: 80,
+      origin: { y: 0.6 },
+      colors: ['#f472b6', '#f9a8d4', '#fbcfe8', '#a855f7', '#d8b4fe']
     });
   };
 
@@ -93,36 +94,54 @@ export const UnboxSimulator: React.FC<UnboxSimulatorProps> = ({
       item_won: revealedItem.item_name,
       is_secret: revealedItem.is_secret,
       box_number: boxNumber,
-      comment: revealedItem.is_secret 
-        ? `Nổ Secret hộp #${boxNumber}! Vía Thầy Phẻo chuẩn không cần chỉnh!`
-        : `Mở trúng ${revealedItem.item_name} hoàn thiện rất đẹp, chuẩn Pop Mart!`,
+      comment: revealedItem.is_secret
+        ? `Nổ Secret hộp #${boxNumber}! Vía Thầy Phẻo chuẩn không cần chỉnh! 🎉`
+        : `Mở trúng ${revealedItem.item_name} hoàn thiện rất đẹp, chuẩn Pop Mart! ✨`,
       image_url: revealedItem.image_url
     });
     setFeedbackShared(true);
   };
 
   return (
-    <div className="py-10 max-w-3xl mx-auto px-4 sm:px-6 animate-fade-in">
-      <div className="surface-card rounded-3xl p-6 sm:p-10 text-center relative overflow-hidden">
-        {/* Header */}
+    <div className="py-10 max-w-3xl mx-auto px-4 sm:px-6 animate-pop-in">
+      {/* Cute Floating Decorations */}
+      <div className="hidden lg:block absolute top-10 -left-5 w-12 h-12 animate-float-gentle pointer-events-none">
+        <span className="text-5xl">🎀</span>
+      </div>
+      <div className="hidden lg:block absolute top-20 -right-5 w-10 h-10 animate-float-gentle pointer-events-none" style={{ animationDelay: '1s' }}>
+        <span className="text-4xl">✨</span>
+      </div>
+
+      <div className="surface-cute-elevated p-6 sm:p-10 text-center relative overflow-hidden">
+        {/* Close Button - Cute */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 btn-cute-ghost p-2"
+        >
+          <span className="text-2xl">✕</span>
+        </button>
+
+        {/* Header - Cute */}
         <div className="max-w-md mx-auto mb-8">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/[0.05] border border-white/[0.08] text-slate-300 text-xs font-medium mb-3">
+          <div className="inline-flex items-center gap-1.5 px-4 py-2 rounded-cute-full bg-white/80 border-2 border-pink-200/50 text-pink-700 text-xs font-semibold shadow-cute mb-4 animate-bounce-cute">
+            <span className="heart-decoration">💖</span>
             <span>Blind Box Experience</span>
+            <span className="star-decoration">⭐</span>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-display font-bold text-white tracking-tight">
-            Unbox Simulator
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-display font-extrabold text-pink-800 text-gradient-cute tracking-tight">
+            Unbox Simulator 🎁
           </h2>
-          <p className="text-slate-400 text-xs sm:text-sm mt-1.5 leading-relaxed">
-            Mô phỏng trải nghiệm xé niêm phong, mở túi bạc và chiêm ngưỡng tác phẩm nghệ thuật bên trong
+          <p className="text-pink-500 text-sm mt-2 leading-relaxed">
+            Mô phỏng trải nghiệm xé niêm phong, mở túi bạc và chiêm ngưỡng tác phẩm nghệ thuật bên trong! 💖
           </p>
         </div>
 
-        {/* Series and Box pickers */}
+        {/* Series and Box pickers - Cute */}
         {state === 'IDLE' && (
-          <div className="max-w-md mx-auto bg-[#090b12] p-4 rounded-xl border border-white/[0.08] mb-8 flex flex-col sm:flex-row gap-3 text-left">
+          <div className="max-w-md mx-auto surface-cute p-4 rounded-cute-lg mb-8 flex flex-col sm:flex-row gap-3 text-left border-2 border-pink-200/50">
             <div className="flex-1">
-              <label className="text-[11px] text-slate-400 font-medium block mb-1">
-                Chọn Series:
+              <label className="text-sm text-pink-500 font-semibold block mb-2 flex items-center gap-1">
+                <Crown className="w-4 h-4" /> Chọn Series:
               </label>
               <select
                 value={selectedSeries.id}
@@ -130,7 +149,7 @@ export const UnboxSimulator: React.FC<UnboxSimulatorProps> = ({
                   const s = seriesList.find(x => x.id === e.target.value);
                   if (s) setSelectedSeries(s);
                 }}
-                className="w-full bg-slate-900 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none"
+                className="input-cute w-full text-sm"
               >
                 {seriesList.map(s => (
                   <option key={s.id} value={s.id}>{s.name} ({s.brand})</option>
@@ -139,13 +158,13 @@ export const UnboxSimulator: React.FC<UnboxSimulatorProps> = ({
             </div>
 
             <div className="w-full sm:w-32">
-              <label className="text-[11px] text-slate-400 font-medium block mb-1">
-                Số Hộp:
+              <label className="text-sm text-pink-500 font-semibold block mb-2 flex items-center gap-1">
+                <Gift className="w-4 h-4" /> Số Hộp:
               </label>
               <select
                 value={boxNumber}
                 onChange={(e) => setBoxNumber(Number(e.target.value))}
-                className="w-full bg-slate-900 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none"
+                className="input-cute w-full text-sm"
               >
                 {Array.from({ length: selectedSeries.total_boxes }, (_, i) => i + 1).map(n => (
                   <option key={n} value={n}>Hộp #{n < 10 ? `0${n}` : n}</option>
@@ -156,53 +175,66 @@ export const UnboxSimulator: React.FC<UnboxSimulatorProps> = ({
         )}
 
         {/* Unbox Stage */}
-        <div className="my-6 flex flex-col items-center justify-center min-h-[260px]">
+        <div className="my-6 flex flex-col items-center justify-center min-h-[280px]">
           {state === 'IDLE' && (
             <div className="space-y-4">
-              <div 
+              <div
                 onClick={startUnboxing}
-                className="w-40 h-44 mx-auto rounded-2xl bg-gradient-to-b from-[#181d2e] to-[#0f121d] border border-white/15 hover:border-amber-400/50 p-4 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 hover:scale-103 shadow-md"
+                className="w-48 h-52 mx-auto rounded-cute-lg bg-cute-gradient border-3 border-pink-300/50 p-6 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 hover:scale-105 hover:border-pink-400 shadow-cute-lg animate-bounce-cute"
               >
-                <Box className="w-12 h-12 text-amber-300 mb-2" />
-                <span className="text-xs font-bold text-white font-display">
+                <div className="relative">
+                  <Box className="w-16 h-16 text-pink-500" />
+                  <span className="absolute -top-2 -right-2 w-6 h-6 bg-yellow-400 rounded-full animate-heartbeat" />
+                </div>
+                <span className="text-sm font-extrabold text-pink-700 font-display mt-3">
                   Hộp #{boxNumber}
                 </span>
-                <span className="text-[10px] text-slate-400 mt-0.5">
-                  {selectedSeries.brand}
+                <span className="text-xs text-pink-500 mt-1">
+                  {selectedSeries.brand} ✨
                 </span>
               </div>
-              <p className="text-xs text-slate-500">
-                Nhấn vào hộp để bắt đầu khui
+              <p className="text-sm text-pink-400 animate-wiggle">
+                Nhấn vào hộp để bắt đầu khui 🎁
               </p>
             </div>
           )}
 
           {state === 'UNBOXING' && (
-            <div className="space-y-3">
-              <div className="w-40 h-44 mx-auto rounded-2xl bg-[#141829] border border-amber-400/50 p-4 flex flex-col items-center justify-center shadow-md animate-pulse">
-                <Box className="w-12 h-12 text-amber-400 animate-bounce" />
-                <span className="text-xs font-bold text-amber-300 mt-3 font-display">
+            <div className="space-y-4 animate-pulse-cute">
+              <div className="w-48 h-52 mx-auto rounded-cute-lg bg-gradient-to-br from-pink-100 to-rose-100 border-3 border-pink-400/50 p-6 flex flex-col items-center justify-center shadow-cute-lg">
+                <div className="relative">
+                  <Box className="w-16 h-16 text-pink-500 animate-bounce" />
+                  <Sparkles className="absolute -top-2 -right-2 w-6 h-6 text-yellow-400 animate-bounce-cute" />
+                </div>
+                <span className="text-sm font-extrabold text-pink-600 mt-3 font-display">
                   Đang mở niêm phong...
                 </span>
+                <div className="mt-3 flex items-center gap-1 text-pink-400">
+                  <WandSparkles className="w-4 h-4 animate-wiggle" />
+                  <span className="text-xs">Bấm độn...</span>
+                  <WandSparkles className="w-4 h-4 animate-wiggle" />
+                </div>
               </div>
             </div>
           )}
 
           {state === 'REVEALED' && revealedItem && (
-            <div className="space-y-4 animate-fade-in">
-              <div className="p-5 rounded-2xl max-w-xs mx-auto surface-elevated border border-white/15">
+            <div className="space-y-4 animate-pop-in">
+              <div className="surface-cute p-6 rounded-cute-xl max-w-xs mx-auto border-2 border-pink-200/50">
                 {revealedItem.is_secret ? (
-                  <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-amber-500 text-slate-950 text-[10px] font-black uppercase tracking-wider mb-3">
-                    <Sparkles className="w-3 h-3 text-slate-950" />
+                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-cute-full bg-gradient-to-r from-rose-500 to-pink-500 text-white text-xs font-black uppercase tracking-wider mb-4 animate-heartbeat shadow-cute">
+                    <Sparkles className="w-4 h-4 animate-bounce-cute" />
                     SECRET CHASE 1/144
+                    <Sparkles className="w-4 h-4 animate-bounce-cute" />
                   </div>
                 ) : (
-                  <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-white/[0.06] text-slate-300 text-[10px] font-semibold mb-3">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-cute-full bg-gradient-to-r from-lavender-500 to-purple-500 text-white text-xs font-semibold mb-4">
+                    <Star className="w-3 h-3" />
                     Nhân Vật Cơ Bản
                   </div>
                 )}
 
-                <div className="w-40 h-40 mx-auto rounded-xl overflow-hidden bg-slate-900 border border-white/10 shadow-sm">
+                <div className="w-44 h-44 mx-auto rounded-cute-lg overflow-hidden bg-cute-gradient border-2 border-pink-200/50 shadow-cute">
                   <img
                     src={revealedItem.image_url}
                     alt={revealedItem.item_name}
@@ -210,28 +242,31 @@ export const UnboxSimulator: React.FC<UnboxSimulatorProps> = ({
                   />
                 </div>
 
-                <div className="mt-3">
-                  <h3 className={`text-base font-bold ${revealedItem.is_secret ? 'text-amber-300' : 'text-white'}`}>
+                <div className="mt-4">
+                  <h3 className={`text-lg font-extrabold ${revealedItem.is_secret ? 'text-gradient-peach' : 'text-pink-700'} font-display`}>
                     {revealedItem.item_name}
                   </h3>
-                  <div className="text-[11px] text-slate-400 mt-0.5">
+                  <div className="text-sm text-pink-500 mt-1 flex items-center justify-center gap-1">
+                    <Crown className="w-4 h-4" />
                     {selectedSeries.name} • Hộp #{boxNumber}
                   </div>
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-white/[0.06]">
+                <div className="mt-5 pt-4 border-t border-pink-200/50">
                   {feedbackShared ? (
-                    <span className="text-xs text-emerald-400 font-medium flex items-center justify-center gap-1">
-                      <Trophy className="w-3.5 h-3.5" />
-                      Đã lưu vào Hall of Fame
+                    <span className="text-sm text-emerald-500 font-semibold flex items-center justify-center gap-1.5 animate-bounce-cute">
+                      <Trophy className="w-4 h-4 animate-heartbeat" />
+                      Đã lưu vào Hall of Fame 🏆
+                      <Star className="w-4 h-4 animate-bounce-cute" />
                     </span>
                   ) : (
                     <button
                       onClick={shareToHallOfFame}
-                      className="text-xs text-amber-400 hover:text-amber-300 font-medium flex items-center justify-center gap-1 mx-auto"
+                      className="btn-cute-lavender px-4 py-2 text-sm flex items-center justify-center gap-2 mx-auto w-full"
                     >
-                      <Trophy className="w-3.5 h-3.5" />
-                      Lưu kỷ niệm vào Hall of Fame
+                      <Trophy className="w-4 h-4" />
+                      Lưu Kỷ Niệm Vào Hall of Fame 🏆
+                      <Sparkles className="w-4 h-4 animate-bounce-cute" />
                     </button>
                   )}
                 </div>
@@ -240,15 +275,16 @@ export const UnboxSimulator: React.FC<UnboxSimulatorProps> = ({
           )}
         </div>
 
-        {/* Buttons */}
+        {/* Buttons - Cute */}
         <div className="flex flex-wrap items-center justify-center gap-3">
           {state === 'IDLE' && (
             <button
               onClick={startUnboxing}
-              className="px-6 py-2.5 rounded-xl bg-white hover:bg-slate-200 text-slate-950 font-bold text-xs tracking-wide transition-all shadow-sm flex items-center gap-2"
+              className="btn-cute px-8 py-3 text-base flex items-center gap-3 shadow-glow-pink animate-heartbeat"
             >
-              Mở Hộp #{boxNumber} Ngay
-              <ArrowRight className="w-3.5 h-3.5" />
+              <Gift className="w-5 h-5 animate-bounce-cute" />
+              Mở Hộp #{boxNumber} Ngay 🎁
+              <ArrowRight className="w-5 h-5" />
             </button>
           )}
 
@@ -259,27 +295,36 @@ export const UnboxSimulator: React.FC<UnboxSimulatorProps> = ({
                   setBoxNumber(prev => (prev % selectedSeries.total_boxes) + 1);
                   setState('IDLE');
                 }}
-                className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-white/10 text-xs font-semibold flex items-center gap-1.5"
+                className="btn-cute-outline px-5 py-3 text-base flex items-center gap-3"
               >
-                <RotateCcw className="w-3.5 h-3.5" />
-                Mở Hộp Khác
+                <RotateCcw className="w-5 h-5" />
+                Mở Hộp Khác 🔄
               </button>
 
               <button
                 onClick={() => {
                   const sold = storage.getSoldBoxes(selectedSeries.id, selectedSeries.total_boxes - selectedSeries.remaining_boxes, selectedSeries.total_boxes);
                   if (sold.includes(boxNumber)) {
-                    alert(`Hộp #${boxNumber} này đã có người mua trước đó rồi, thí chủ hãy chọn hộp khác còn sẵn nhé!`);
+                    alert(`Hộp #${boxNumber} này đã có người mua trước đó rồi, thí chủ hãy chọn hộp khác còn sẵn nhé! 😊`);
                     return;
                   }
                   onAddToCart(selectedSeries, [boxNumber]);
                 }}
-                className="px-5 py-2.5 rounded-xl bg-white hover:bg-slate-200 text-slate-950 font-bold text-xs transition-all flex items-center gap-1.5 shadow-sm"
+                className="btn-cute-peach px-6 py-3 text-base flex items-center gap-3 shadow-glow-peach"
               >
-                Đặt Mua Hộp Này Thật
+                <Heart className="w-5 h-5 animate-heartbeat" />
+                Đặt Mua Hộp Này Thật 💖
               </button>
             </>
           )}
+
+          <button
+            onClick={onClose}
+            className="btn-cute-ghost px-4 py-2 text-sm"
+          >
+            <ArrowRight className="w-4 h-4 rotate-180" />
+            Quay Lại Cửa Hàng 🏠
+          </button>
         </div>
       </div>
     </div>

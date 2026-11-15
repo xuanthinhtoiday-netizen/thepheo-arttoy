@@ -40,13 +40,25 @@ Tài liệu này hướng dẫn bạn đưa toàn bộ hệ thống Website Art 
 
 ---
 
-## 3. Bước 2: Tạo Bucket Cloudflare R2 Lưu Hình Ảnh Art Toy
+## 3. Bước 2: Tạo KV Namespace Cloudflare Lưu Cache & Session Admin
 
-1. Tạo R2 Bucket:
+1. Tạo KV Namespace:
    ```bash
-   wrangler r2 bucket create arttoy-media
+   wrangler kv namespace create arttoy-kv
    ```
-2. Cấu hình public access cho bucket trong Cloudflare Dashboard (hoặc gắn custom domain) để có link xem trực tiếp ảnh sản phẩm.
+2. Dán `id` (và `preview_id`) trả về vào `[[kv_namespaces]]` trong file `wrangler.toml` (binding `KV`).
+3. KV dùng để: cache danh sách series (`series:all`), invalidate cache khi thêm series, và lưu session đăng nhập admin (`admin:session:<token>`, TTL 7 ngày).
+
+---
+
+## 3b. Bước 2b: Đặt Mật Khẩu Admin (Bắt Buộc)
+
+Khu vực quản trị được bảo vệ bằng mật khẩu, lưu bí mật trên Cloudflare:
+
+```bash
+wrangler secret put ADMIN_PASSWORD
+```
+*(Dán mật khẩu admin bạn chọn. Tuyệt đối không commit mật khẩu thật vào repo — `.env.example` chỉ là mẫu)*
 
 ---
 

@@ -6,6 +6,7 @@ const STORAGE_KEYS = {
   ORDERS: 'thepheo_orders',
   HALL_OF_FAME: 'thepheo_hall_of_fame',
   CUSTOMERS: 'thepheo_customers',
+  LAST_CUSTOMER: 'thepheo_last_customer',
   API_KEY: 'thepheo_gemini_api_key'
 };
 
@@ -159,7 +160,27 @@ class StorageService {
       customers.push(customer);
     }
     this.set(STORAGE_KEYS.CUSTOMERS, customers);
+    // Ghi nho thong tin khach hang moi nhat de tu dong dien lai o lan dat hang sau
+    this.setLastCustomer(customer);
     return customer;
+  }
+
+  /** Lay thong tin khach hang vua dat hang gan nhat (de tu dong dien o checkout) */
+  getLastCustomer(): Customer | null {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.LAST_CUSTOMER);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private setLastCustomer(customer: Customer): void {
+    try {
+      localStorage.setItem(STORAGE_KEYS.LAST_CUSTOMER, JSON.stringify(customer));
+    } catch (e) {
+      console.error('Save last customer error:', e);
+    }
   }
 
   // --- GEMINI API KEY ---

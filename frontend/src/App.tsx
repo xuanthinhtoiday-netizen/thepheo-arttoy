@@ -14,6 +14,7 @@ import { ChatbotWidget } from './components/ChatbotWidget';
 import { CartDrawer } from './components/CartDrawer';
 import { CheckoutModal } from './components/CheckoutModal';
 import { AdminDashboard } from './components/AdminDashboard';
+import { AdminLogin } from './components/AdminLogin';
 import { Footer } from './components/Footer';
 
 export function App() {
@@ -29,6 +30,27 @@ export function App() {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatInitialPrompt, setChatInitialPrompt] = useState<string>('');
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
+
+  // Admin auth gate (session token persisted in localStorage)
+  const [adminAuthed, setAdminAuthed] = useState(() => {
+    try {
+      return !!localStorage.getItem('thepheo_admin_token');
+    } catch {
+      return false;
+    }
+  });
+  const handleAdminLogin = () => setAdminAuthed(true);
+  const handleAdminLogout = () => {
+    const token = localStorage.getItem('thepheo_admin_token');
+    fetch('/api/admin/logout', {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {}
+    }).catch(() => {});
+    localStorage.removeItem('thepheo_admin_token');
+    setAdminAuthed(false);
+    setCurrentView('store');
+  };
+
   const [directCheckoutData, setDirectCheckoutData] = useState<{
     seriesId?: string;
     seriesName: string;
@@ -98,7 +120,7 @@ export function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#080b14] text-slate-100 flex flex-col">
+    <div className="min-h-screen text-pink-900 flex flex-col">
       {/* Top Navigation */}
       <Navbar
         cartCount={cartItems.reduce((acc, it) => acc + it.selectedBoxes.length, 0)}
@@ -188,11 +210,15 @@ export function App() {
           />
         )}
 
-        {/* VIEW 4: ADMIN DASHBOARD */}
-        {currentView === 'admin' && (
+        {/* VIEW 4: ADMIN DASHBOARD (password-gated) */}
+        {currentView === 'admin' && !adminAuthed && (
+          <AdminLogin onSuccess={handleAdminLogin} onBack={() => setCurrentView('store')} />
+        )}
+        {currentView === 'admin' && adminAuthed && (
           <AdminDashboard
             seriesList={seriesList}
             onRefreshData={refreshData}
+            onLogout={handleAdminLogout}
           />
         )}
       </main>
