@@ -98,9 +98,9 @@ INSERT OR REPLACE INTO series_items (id, series_id, item_name, is_secret, drop_p
 
 -- Hall of Fame (Social Proof)
 INSERT OR REPLACE INTO hall_of_fame (id, customer_name, series_name, item_won, is_secret, box_number, comment, image_url) VALUES
-('hof-01', 'Minh Hoàng (Hà Nội)', 'SKULLPANDA The Warmth Series', 'The Hidden Heart (SECRET)', 7, 'Nhờ Thầy Phẻo gieo quẻ số 7 mà nổ ngay Secret 1/144! Quá đỉnh thầy ơi!', 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=600&q=80'),
-('hof-02', 'Linh Đan (TP.HCM)', 'CRYBABY Sunset Concert Series', 'Golden Saxophone Crybaby', 3, 'Thầy Phẻo bảo mệnh Kim bốc hộp 3 là hợp vía, trúng luôn con Secret vàng chóe!', 'https://images.unsplash.com/photo-1563245372-f21724e3856d?w=600&q=80'),
-('hof-03', 'Tuấn Anh (Đà Nẵng)', 'GUNDAM Universe Vol.2', 'Gold Armor Gundam Secret', 11, 'Combo 3 hộp bốc theo quẻ của Thầy, trúng 1 Secret và 2 con hiếm.', 'https://images.unsplash.com/photo-1596727147705-61a532a659bd?w=600&q=80');
+('hof-01', 'Minh Hoàng (Hà Nội)', 'SKULLPANDA The Warmth Series', 'The Hidden Heart (SECRET)', 1, 7, 'Nhờ Thầy Phẻo gieo quẻ số 7 mà nổ ngay Secret 1/144! Quá đỉnh thầy ơi!', 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=600&q=80'),
+('hof-02', 'Linh Đan (TP.HCM)', 'CRYBABY Sunset Concert Series', 'Golden Saxophone Crybaby', 1, 3, 'Thầy Phẻo bảo mệnh Kim bốc hộp 3 là hợp vía, trúng luôn con Secret vàng chóe!', 'https://images.unsplash.com/photo-1563245372-f21724e3856d?w=600&q=80'),
+('hof-03', 'Tuấn Anh (Đà Nẵng)', 'GUNDAM Universe Vol.2', 'Gold Armor Gundam Secret', 1, 11, 'Combo 3 hộp bốc theo quẻ của Thầy, trúng 1 Secret và 2 con hiếm.', 'https://images.unsplash.com/photo-1596727147705-61a532a659bd?w=600&q=80');
 
 -- Sample Customer & Orders
 INSERT OR REPLACE INTO customers (id, name, phone, address) VALUES
