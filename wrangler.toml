@@ -1,0 +1,23 @@
+name = "arttoy-mysterybox-ai"
+compatibility_date = "2024-11-01"
+pages_build_output_dir = "./dist"
+
+# Cloudflare D1 Database Binding
+[[d1_databases]]
+binding = "DB"
+database_name = "arttoy-db"
+database_id = "your-d1-database-id-placeholder"
+migrations_dir = "./migrations"
+
+# Cloudflare R2 Storage Binding for Art Toy Media
+[[r2_buckets]]
+binding = "MEDIA_BUCKET"
+bucket_name = "arttoy-media"
+
+# Environment Variables & AI Gateway settings
+[vars]
+AI_PERSONA_NAME = "Thầy Phẻo Gieo Quẻ Art Toy"
+STORE_NAME = "PHẺO ART TOY - HỘP MÙ PHONG THỦY"
+STORE_BANK_ID = "970422" # MB Bank (Military Bank)
+STORE_ACCOUNT_NO = "888899998888"
+STORE_ACCOUNT_NAME = "TIEM DO CHOI THE PHEO"
