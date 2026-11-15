@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChatMessage } from '../types';
-import { askThePheo } from '../services/gemini';
+import { askThePheo } from '../services/thepheo';
 import { formatVND } from '../services/vietqr';
-import { storage } from '../services/storage';
 import {
-  Send, X, Sparkles, Key,
+  Send, X, Sparkles,
   CheckCircle2, Copy, Check, Minimize2, Maximize2, Compass, Heart, Star, WandSparkles, Gift, Crown, Sparkle, Zap, ShieldCheck, Box, Trophy
 } from 'lucide-react';
 
@@ -35,8 +34,6 @@ export const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
-  const [apiKeyInput, setApiKeyInput] = useState(storage.getGeminiApiKey());
   const [copiedOrderId, setCopiedOrderId] = useState<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -95,12 +92,6 @@ export const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const saveApiKey = () => {
-    storage.setGeminiApiKey(apiKeyInput);
-    setShowSettings(false);
-    alert('Đã cập nhật Gemini API Key! 🎉');
   };
 
   const copyToClipboard = (text: string, id: string) => {
@@ -162,13 +153,6 @@ export const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
 
             <div className="flex items-center gap-1 text-pink-500">
               <button
-                onClick={() => setShowSettings(!showSettings)}
-                title="Cài đặt API Key"
-                className="btn-cute-ghost p-2"
-              >
-                <Key className="w-4 h-4" />
-              </button>
-              <button
                 onClick={() => setIsExpanded(!isExpanded)}
                 title={isExpanded ? 'Thu nhỏ' : 'Phóng to'}
                 className="hidden sm:block btn-cute-ghost p-2"
@@ -184,31 +168,6 @@ export const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
               </button>
             </div>
           </div>
-
-          {/* Settings Panel - Cute */}
-          {showSettings && (
-            <div className="p-4 surface-cute border-b border-pink-200/50 space-y-3 animate-pop-in">
-              <span className="font-extrabold text-sm text-pink-700 block flex items-center gap-1">
-                <Sparkles className="w-4 h-4" />
-                Google Gemini API Key (Tùy chọn):
-              </span>
-              <div className="flex gap-2">
-                <input
-                  type="password"
-                  placeholder="AIzaSy..."
-                  value={apiKeyInput}
-                  onChange={(e) => setApiKeyInput(e.target.value)}
-                  className="input-cute flex-1 text-sm"
-                />
-                <button
-                  onClick={saveApiKey}
-                  className="btn-cute-peach px-4 py-2 text-sm"
-                >
-                  Lưu 💾
-                </button>
-              </div>
-            </div>
-          )}
 
           {/* Chat Messages Flow - Cute */}
           <div className="flex-1 p-4 overflow-y-auto space-y-4">

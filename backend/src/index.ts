@@ -120,7 +120,7 @@ app.get('/api/hall-of-fame', (req, res) => {
   res.json(hallOfFameDb);
 });
 
-// 8. POST /api/chat (Gemini AI Gateway Simulator)
+// 8. POST /api/chat (Workers AI Gateway Simulator)
 app.post('/api/chat', (req, res) => {
   const { message } = req.body;
   res.json({

@@ -477,7 +477,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <div className="surface-cute p-5 rounded-cute-xl border-2 border-pink-200/50 text-center animate-pop-in">
               <div className="text-4xl mb-2">🔮</div>
               <h4 className="font-extrabold text-pink-700 mb-1">AI Gateway</h4>
-              <p className="text-sm text-pink-500">Gemini 1.5 Flash via AI Gateway</p>
+              <p className="text-sm text-pink-500">Llama 3.1 8B Instruct via Workers AI</p>
               <span className="badge-cute-lavender inline-block mt-2">RAG Enabled</span>
             </div>
             <div className="surface-cute p-5 rounded-cute-xl border-2 border-pink-200/50 text-center animate-pop-in" style={{ animationDelay: '100ms' }}>

@@ -1,3 +1,5 @@
+
+
 name = "arttoy-mysterybox-ai"
 compatibility_date = "2024-11-01"
 # Vite build ra frontend/dist nen phai tro Pages toi day (ko phai ./dist o goc repo)
@@ -14,6 +16,10 @@ migrations_dir = "./migrations"
 [[kv_namespaces]]
 binding = "KV"
 id = "7813dc1fb2754b1d9b86b772e0315c40"
+
+# Cloudflare Workers AI Binding (chatbot Thầy Phẻo - thay the Gemini API)
+[ai]
+binding = "AI"
 
 # Environment Variables & AI Gateway settings
 [vars]

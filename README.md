@@ -2,7 +2,7 @@
 
 > **Dự án:** Website Thương Mại Điện Tử Ngách "Mystery Box & Art Toy" Tích Hợp Chatbot AI và Hạ Tầng Cloudflare Serverless  
 > **AI Persona:** "Thầy Phẻo Gieo Quẻ Art Toy" (Soi vía bốc hộp, quẻ phong thủy, kích lộc Secret 1/144)  
-> **Hạ tầng:** Cloudflare Serverless Stack (Pages + Workers + D1 SQLite + KV Storage + Vectorize + Google Gemini API Gateway)
+> **Hạ tầng:** Cloudflare Serverless Stack (Pages + Hono.js Workers + D1 SQLite + KV Storage + Vectorize + Workers AI)
 
 ---
 
@@ -16,7 +16,7 @@
 - **FR-02: Khung Chatbot AI tương tác ("Thầy Phẻo Gieo Quẻ"):**
   - Bong bóng chat nổi góc màn hình 24/7 với hiệu ứng huyền thuật và trạng thái AI Online.
   - Persona "Thầy Phẻo" dí dỏm, am hiểu văn hóa Art Toy & phong thủy ngũ hành, gieo quẻ dịch số, khuyên giờ hoàng đạo, gợi ý combo 3-5 hộp hoặc Full Box.
-  - Tích hợp cổng Gemini API và bộ suy luận phong thủy tương tác thông minh ngay trong giao diện chat.
+  - Tích hợp **Cloudflare Workers AI** (Llama 3.1 8B Instruct) làm "brain" cho Thầy Phẻo + bộ suy luận phong thủy tương tác thông minh ngay trong giao diện chat — không cần API Key nào cả.
 - **FR-03: Cơ chế Bốc thăm tự động & Chọn Hộp (AI-assisted Gacha Roll):**
   - Giao diện mô phỏng khay 12 hộp nguyên seal Pop Mart.
   - Tùy chọn từng số hộp (Hộp 1 đến Hộp 12) hoặc chọn nhanh Combo 3 Hộp (Tam Hoa), Combo 5 Hộp (Ngũ Hành), Full Box.
@@ -88,4 +88,4 @@ Xem chi tiết từng bước trong file [DEPLOYMENT_GUIDE.md](file:///D:/Websit
 2. **Nạp Schema SQL:** `npx wrangler d1 execute arttoy-db --file=./schema.sql`
 3. **Build Frontend:** `npm run build`
 4. **Deploy Cloudflare Pages & Workers:** `npx wrangler pages deploy frontend/dist` (hoặc dùng GitHub Integration — `pages_build_output_dir` trong `wrangler.toml` đã trỏ sẵn `./frontend/dist`)
-5. **Bật API `/api` trên production:** API chạy qua Pages Functions (`functions/api/[[path]].ts`). Cần cấu hình bindings D1/KV/Vectorize + secrets `ADMIN_PASSWORD`, `GEMINI_API_KEY` trong Dashboard — xem mục "5b" trong [DEPLOYMENT_GUIDE.md](file:///D:/Website%20t%C3%BAi%20m%C3%B9/DEPLOYMENT_GUIDE.md).
+5. **Bật API `/api` trên production:** API chạy qua Pages Functions (`functions/api/[[path]].ts`). Cần cấu hình bindings D1/KV/Vectorize/AI + secret `ADMIN_PASSWORD` trong Dashboard — xem mục "5b" trong [DEPLOYMENT_GUIDE.md](file:///D:/Website%20t%C3%BAi%20m%C3%B9/DEPLOYMENT_GUIDE.md).

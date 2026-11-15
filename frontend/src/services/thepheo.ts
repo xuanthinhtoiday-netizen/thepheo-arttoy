@@ -22,23 +22,16 @@ export interface ThePheoResponse {
   };
 }
 
-const THE_PHEO_SYSTEM_PROMPT = `
-Ngươi là "Thầy Phẻo Gieo Quẻ Art Toy" - Bậc thầy phong thủy chiêm tinh học kiêm dân chơi Blind Box & Art Toy lão luyện số 1 cõi mạng.
-Tính cách & văn phong:
-- Hài hước, dí dỏm, am hiểu sâu sắc văn hóa đồ chơi nghệ thuật (Pop Mart, Skullpanda, Crybaby, Gundam, Dimoo, Hirono, Molly...).
-- Xưng hô "Thầy - Thí chủ" hoặc "Thầy - Đạo hữu".
-- Thường gieo quẻ dịch số, xem mệnh ngũ hành (Kim, Mộc, Thủy, Hỏa, Thổ), phán vía trúng Secret (tỉ lệ 1/144 cực hiếm).
-- Khuyên chọn các mã số hộp cụ thể (từ Hộp 1 đến Hộp 12) theo giờ hoàng đạo và thần tài dẫn lối.
-- Luôn kích thích khách bốc Combo 3-5 hộp hoặc nguyên Full Box (12 hộp) để tăng xác suất nổ Secret.
-- Nếu thí chủ đồng ý chốt đơn, hãy chúc phúc cực mạnh và xác nhận gắp hộp cho thí chủ.
-`;
-
+/**
+ * Hoi Thầy Phẻo - chay tren Cloudflare Workers AI (binding AI) phia Worker,
+ * khong can API key nhu Gemini truoc do. Neu backend loi -> tu dong fallback
+ * ve bo dich hon local duoi day.
+ */
 export async function askThePheo(userMessage: string, history: Array<{ sender: string; text: string }>): Promise<ThePheoResponse> {
-  const apiKey = storage.getGeminiApiKey();
   const seriesList = storage.getSeries();
   const hallOfFame = storage.getHallOfFame();
 
-  // First try to call the backend API (which uses Vectorize RAG)
+  // Goi API /api/chat cua Worker (Workers AI + Vectorize RAG)
   try {
     const response = await fetch('/api/chat', {
       method: 'POST',
@@ -74,60 +67,10 @@ export async function askThePheo(userMessage: string, history: Array<{ sender: s
       }
     }
   } catch (err) {
-    console.warn('Backend API call failed, trying direct Gemini API:', err);
+    console.warn('Backend API call failed, dung bo dich hon local:', err);
   }
 
-  // Fallback: If user provided a Gemini API Key, try calling the live Gemini API directly
-  if (apiKey) {
-    try {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [
-            {
-              role: 'user',
-              parts: [{
-                text: `${THE_PHEO_SYSTEM_PROMPT}\n\nDanh sách các series hiện có trong tiệm:\n${JSON.stringify(seriesList.map(s => ({ id: s.id, name: s.name, brand: s.brand, price: s.price_per_box, stock: s.remaining_boxes })))}\n\nKhách vừa trúng Secret gần nhất:\n${JSON.stringify(hallOfFame.slice(0, 3))}\n\nTin nhắn người dùng: "${userMessage}"\nHãy trả lời theo đúng phong cách Thầy Phẻo. Nếu người dùng muốn tư vấn chọn hộp hoặc chốt combo, hãy gợi ý số hộp cụ thể (1-12) và series tương ứng.`
-              }]
-            }
-          ],
-          generationConfig: {
-            temperature: 0.8,
-            maxOutputTokens: 600,
-          }
-        })
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (text) {
-          const lowerMsg = userMessage.toLowerCase();
-          let suggestedCombo = undefined;
-          let qrData = undefined;
-
-          if (lowerMsg.includes('chốt đơn') || lowerMsg.includes('thanh toán') || lowerMsg.includes('chốt combo')) {
-            const resolved = resolveTargetSeriesAndBoxes(userMessage, seriesList);
-            qrData = processDirectChatOrder(resolved.series, resolved.boxes);
-          } else if (lowerMsg.includes('combo') || lowerMsg.includes('hộp') || lowerMsg.includes('skullpanda') || lowerMsg.includes('crybaby') || lowerMsg.includes('gundam')) {
-            suggestedCombo = buildComboSuggestion(userMessage, seriesList);
-          }
-
-          return {
-            reply: text,
-            badge: 'Quẻ Linh Ứng ✨💖',
-            suggestedCombo,
-            qrData
-          };
-        }
-      }
-    } catch (err) {
-      console.warn('Gemini API call failed, falling back to local divination engine:', err);
-    }
-  }
-
-  // --- Fallback Divination Engine for "Thầy Phẻo" ---
+  // Fallback: bo dich phong thuy Thầy Phẻo ngay tren trinh duyet
   return generateThePheoLocalResponse(userMessage, seriesList, hallOfFame);
 }
 
@@ -255,7 +198,7 @@ function generateThePheoLocalResponse(
     const hofRecent = hallOfFame[0];
     const combo = buildComboSuggestion(userMessage, seriesList);
     return {
-      reply: `👁️ **BÍ MẬT NỔ SECRET TỪ THẦY PHẺO:** 💖\n\nThông thường một thùng Blind Box có tỉ lệ Secret là **1/144** (khoảng 0.69%) hoặc **1/72** đối với Gundam. Nhưng dân chơi có kinh nghiệm không bao giờ bốc mù quáng!\n\n${hofRecent ? `Minh chứng rõ ràng: Hôm trước đạo hữu **${hofRecent.customer_name}** nghe lời Thầy bốc **${hofRecent.series_name}** (Hộp #${hofRecent.box_number}) nổ ngay **${hofRecent.item_won}**!` : ''}\n\n💡 **Mẹo của Thầy:** Bốc Combo từ 3 hộp trở lên cùng một set nguyên seal, xác suất trúng nhân vật đặc biệt tăng gấp 4 lần so với mua rải rác! ✨`,
+      reply: `👁️ **BÍ MẬT NỔ SECRET TỪ THẦY PHẺO:** 💖\n\nThông thường một thùng Blind Box có tỉ lệ Secret là **1/144** (khoảng 0.69%) hoặc **1/72** đối với Gundam. Nhưng dân chơi có kinh nghiệm không bao giờ bốc mù quáng!\n\n${hofRecent ? `Minh chứng rõ ràng: Hôm trước đạo hữu **${hofRecent.customer_name}** nghe lời Thầy bốc **${hofRecent.series_name}** (Hộp #${hofRecent.box_number}) nổ ngay **${hofRecent.item_won}**!` : ''}\n\n💡 **Mẹo của Thầy:** Bốc Combo từ 3 hộp trở lên cùng một set nguyên seal, xác suất trúng nhân vật đặc biệt tăng gấp 4 lần so với mua rải rải! ✨`,
       badge: 'Bí Kíp Săn Secret 💎💖',
       suggestedCombo: combo
     };

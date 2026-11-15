@@ -1,19 +1,28 @@
 /**
- * Cloudflare Worker Backend & AI Gateway
- * Stack: Cloudflare Workers, Cloudflare D1 (SQLite), Cloudflare KV, Cloudflare Vectorize, Google Gemini API
+ * Cloudflare Worker Backend & AI Gateway — Hono.js
+ * Stack: Hono, Cloudflare D1 (SQLite), Cloudflare KV, Cloudflare Vectorize, Cloudflare Workers AI
  */
+
+import { Hono } from 'hono'
+import { cors } from 'hono/cors'
+
 
 export interface Env {
   DB: any; // Cloudflare D1 Database binding
   KV: any; // Cloudflare KV Namespace binding
   VECTORIZE: any; // Cloudflare Vectorize binding
-  GEMINI_API_KEY?: string;
+  AI: any; // Cloudflare Workers AI binding (khong can API key nhu Gemini truoc)
+  AI_MODEL?: string; // Tu chon model Workers AI, mac dinh: @cf/meta/llama-3.1-8b-instruct
   AI_PERSONA_NAME?: string;
+  STORE_NAME?: string;
+  STORE_BANK_ID?: string;
+  STORE_ACCOUNT_NO?: string;
+  STORE_ACCOUNT_NAME?: string;
   ADMIN_PASSWORD?: string; // Mat khau dang nhap khu vuc admin (dat bang: wrangler secret put ADMIN_PASSWORD)
 }
 
 // Helper: Generate embeddings using a simple hash-based approach (for demo)
-// In production, use a proper embedding model like text-embedding-3-small via AI Gateway
+// In production, use a proper embedding model like multilingual-embedding via Workers AI
 async function generateEmbedding(text: string): Promise<number[]> {
   // Simple deterministic embedding for demo purposes
   // In production, call an embedding API
@@ -128,242 +137,235 @@ async function verifyAdminSession(env: Env, token: string): Promise<boolean> {
   }
 }
 
-async function requireAdmin(request: Request, env: Env): Promise<boolean> {
-  if (!env.ADMIN_PASSWORD) return false; // Chua cau hinh mat khau -> khoa toan bo route admin
-  return verifyAdminSession(env, extractAdminToken(request));
-}
-
 function adminSessionCookie(token: string, maxAge: number): string {
   return `thepheo_admin=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}`;
 }
 
-function unauthorized(): Response {
-  return Response.json({ error: 'Yeu cau dang nhap admin! 🔐' }, { status: 401, headers: { 'Content-Type': 'application/json' } });
-}
+// --- Hono App ---
+const app = new Hono<{ Bindings: Env }>();
 
-export default {
-  async fetch(request: Request, env: Env, ctx: any): Promise<Response> {
-    const url = new URL(request.url);
-    const { pathname } = url;
+app.use('*', cors({
+  origin: '*',
+  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowHeaders: ['Content-Type', 'Authorization'],
+}));
 
-    // CORS Headers for API
-    const corsHeaders = {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    };
+// Middleware: bao ve moi route quan tri
+const requireAdmin = async (c: any, next: any) => {
+  if (!c.env.ADMIN_PASSWORD) {
+    return c.json({ error: 'Chua cau hinh ADMIN_PASSWORD tren Worker. Deploy: wrangler secret put ADMIN_PASSWORD' }, 503);
+  }
+  const token = extractAdminToken(c.req.raw);
+  if (!(await verifyAdminSession(c.env, token))) {
+    return c.json({ error: 'Yeu cau dang nhap admin! 🔐' }, 401);
+  }
+  await next();
+};
 
-    if (request.method === 'OPTIONS') {
-      return new Response(null, { headers: corsHeaders });
+// 0a. POST /api/admin/login - Dang nhap admin, tao session luu trong KV
+app.post('/api/admin/login', async (c) => {
+  const env = c.env;
+  if (!env.ADMIN_PASSWORD) {
+    return c.json(
+      { error: 'Chua cau hinh ADMIN_PASSWORD tren Worker. Deploy: wrangler secret put ADMIN_PASSWORD' },
+      503
+    );
+  }
+  let password = '';
+  try {
+    const body = await c.req.json();
+    password = body?.password || '';
+  } catch {
+    password = '';
+  }
+  const ok = await constantTimeEqual(password, env.ADMIN_PASSWORD);
+  if (!ok) {
+    return c.json({ error: 'Mat khau admin khong dung! 🔐' }, 401);
+  }
+  const token = await createAdminSession(env);
+  return new Response(JSON.stringify({ success: true, token }), {
+    status: 200,
+    headers: {
+      'Content-Type': 'application/json',
+      'Set-Cookie': adminSessionCookie(token, ADMIN_SESSION_TTL),
+    },
+  });
+});
+
+// 0b. POST /api/admin/logout - Huy session admin
+app.post('/api/admin/logout', async (c) => {
+  const token = extractAdminToken(c.req.raw);
+  if (token && c.env.KV) {
+    try { await c.env.KV.delete(`admin:session:${token}`); } catch { /* ignore */ }
+  }
+  return new Response(JSON.stringify({ success: true }), {
+    headers: {
+      'Content-Type': 'application/json',
+      'Set-Cookie': adminSessionCookie('', 0),
+    },
+  });
+});
+
+// 1. GET /api/series - List all series from Cloudflare D1 (with KV caching)
+app.get('/api/series', async (c) => {
+  const env = c.env;
+  const cacheKey = 'series:all';
+  const cached = await getFromKV(env, cacheKey);
+  if (cached) {
+    return c.json(cached);
+  }
+
+  if (env.DB) {
+    const { results } = await env.DB.prepare('SELECT * FROM series ORDER BY created_at DESC').all();
+    await setToKV(env, cacheKey, results, 300); // Cache for 5 minutes
+    return c.json(results);
+  }
+  return c.json({ message: 'D1 binding ready' });
+});
+
+// 2. GET /api/series/:id - Get series with items from D1
+app.get('/api/series/:id', async (c) => {
+  const id = c.req.param('id');
+  if (c.env.DB) {
+    const series = await c.env.DB.prepare('SELECT * FROM series WHERE id = ?').bind(id).first();
+    const { results: items } = await c.env.DB.prepare('SELECT * FROM series_items WHERE series_id = ?').bind(id).all();
+    return c.json({ ...series, items });
+  }
+  return c.json({ error: 'Not Found' }, 404);
+});
+
+// 3. POST /api/series - Create new series in D1 (Admin)
+app.post('/api/series', requireAdmin, async (c) => {
+  const env = c.env;
+  const s = await c.req.json();
+  if (env.DB) {
+    await env.DB.prepare(`
+      INSERT INTO series (id, name, brand, description, price_per_box, total_boxes, remaining_boxes, image_url)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(s.id, s.name, s.brand, s.description, s.price_per_box, s.total_boxes, s.remaining_boxes, s.image_url).run();
+
+    // Invalidate cache
+    await env.KV.delete('series:all');
+
+    // Index into Vectorize
+    await indexSeriesData(env);
+  }
+  return c.json(s, 201);
+});
+
+// 4. GET /api/orders - List all orders with customer details (Admin)
+app.get('/api/orders', requireAdmin, async (c) => {
+  if (c.env.DB) {
+    const { results } = await c.env.DB.prepare(`
+      SELECT orders.*, customers.name as customer_name, customers.phone as customer_phone, customers.address as customer_address
+      FROM orders
+      LEFT JOIN customers ON orders.customer_id = customers.id
+      ORDER BY orders.created_at DESC
+    `).all();
+    return c.json(results);
+  }
+  return c.json([]);
+});
+
+// 5. POST /api/orders - Create order & deduct stock from D1
+app.post('/api/orders', async (c) => {
+  const env = c.env;
+  const body = await c.req.json();
+  const orderId = `ORD-${Date.now().toString().slice(-6)}`;
+  if (env.DB) {
+    await env.DB.prepare(`
+      INSERT INTO orders (id, customer_id, total_amount, status, ordered_items_json)
+      VALUES (?, ?, ?, 'PENDING_PAYMENT', ?)
+    `).bind(orderId, body.customer_id, body.total_amount, JSON.stringify(body.ordered_items || [])).run();
+
+    // Deduct remaining boxes if series_id is provided
+    if (body.series_id && body.box_count) {
+      await env.DB.prepare(`
+        UPDATE series SET remaining_boxes = MAX(0, remaining_boxes - ?) WHERE id = ?
+      `).bind(body.box_count, body.series_id).run();
+
+      // Invalidate cache
+      await env.KV.delete('series:all');
+      // Re-index for updated stock
+      await indexSeriesData(env);
     }
+  }
+  return c.json({ success: true, orderId });
+});
 
-    try {
-      // 0a. POST /api/admin/login - Dang nhap admin, tao session luu trong KV
-      if (request.method === 'POST' && pathname === '/api/admin/login') {
-        if (!env.ADMIN_PASSWORD) {
-          return Response.json(
-            { error: 'Chua cau hinh ADMIN_PASSWORD tren Worker. Deploy: wrangler secret put ADMIN_PASSWORD' },
-            { status: 503, headers: corsHeaders }
-          );
-        }
-        let password = '';
-        try {
-          const body = await request.json() as any;
-          password = body?.password || '';
-        } catch {
-          password = '';
-        }
-        const ok = await constantTimeEqual(password, env.ADMIN_PASSWORD);
-        if (!ok) {
-          return Response.json({ error: 'Mat khau admin khong dung! 🔐' }, { status: 401, headers: corsHeaders });
-        }
-        const token = await createAdminSession(env);
-        return new Response(JSON.stringify({ success: true, token }), {
-          status: 200,
-          headers: {
-            ...corsHeaders,
-            'Content-Type': 'application/json',
-            'Set-Cookie': adminSessionCookie(token, ADMIN_SESSION_TTL),
-          },
-        });
-      }
+// 6. PUT /api/orders/:id/status - Update order status in D1 (Admin)
+app.put('/api/orders/:id/status', requireAdmin, async (c) => {
+  const orderId = c.req.param('id');
+  const { status } = await c.req.json();
+  if (c.env.DB) {
+    await c.env.DB.prepare('UPDATE orders SET status = ? WHERE id = ?').bind(status, orderId).run();
+  }
+  return c.json({ success: true, orderId, status });
+});
 
-      // 0b. POST /api/admin/logout - Huy session admin
-      if (request.method === 'POST' && pathname === '/api/admin/logout') {
-        const token = extractAdminToken(request);
-        if (token && env.KV) {
-          try { await env.KV.delete(`admin:session:${token}`); } catch { /* ignore */ }
-        }
-        return new Response(JSON.stringify({ success: true }), {
-          headers: {
-            ...corsHeaders,
-            'Content-Type': 'application/json',
-            'Set-Cookie': adminSessionCookie('', 0),
-          },
-        });
-      }
+// 7. GET /api/hall-of-fame - List hall of fame feedback
+app.get('/api/hall-of-fame', async (c) => {
+  if (c.env.DB) {
+    const { results } = await c.env.DB.prepare('SELECT * FROM hall_of_fame ORDER BY created_at DESC').all();
+    return c.json(results);
+  }
+  return c.json([]);
+});
 
-      // 1. GET /api/series - List all series from Cloudflare D1 (with KV caching)
-      if (request.method === 'GET' && pathname === '/api/series') {
-        const cacheKey = 'series:all';
-        const cached = await getFromKV(env, cacheKey);
-        if (cached) {
-          return Response.json(cached, { headers: corsHeaders });
-        }
+// 8. POST /api/chat - Thầy Phẻo AI Gateway voi Workers AI + Vectorize RAG
+app.post('/api/chat', async (c) => {
+  const env = c.env;
+  const { message, customer_id } = await c.req.json().catch(() => ({}));
 
-        if (env.DB) {
-          const { results } = await env.DB.prepare('SELECT * FROM series ORDER BY created_at DESC').all();
-          await setToKV(env, cacheKey, results, 300); // Cache for 5 minutes
-          return Response.json(results, { headers: corsHeaders });
-        }
-        return Response.json({ message: 'D1 binding ready' }, { headers: corsHeaders });
-      }
+  // Use Vectorize for semantic search to find relevant series
+  const searchResults = await semanticSearchSeries(env, message || '', 2);
+  let context = '';
+  if (searchResults.length > 0) {
+    context = '\n\nDữ liệu series liên quan:\n' + searchResults.map((m: any) =>
+      `- ${m.metadata.name} (${m.metadata.brand}): ${m.metadata.remaining_boxes} hộp còn lại, giá ${m.metadata.price_per_box.toLocaleString()}đ/hộp`
+    ).join('\n');
+  }
 
-      // 2. GET /api/series/:id - Get series with items from D1
-      if (request.method === 'GET' && pathname.startsWith('/api/series/')) {
-        const id = pathname.split('/').pop();
-        if (env.DB) {
-          const series = await env.DB.prepare('SELECT * FROM series WHERE id = ?').bind(id).first();
-          const { results: items } = await env.DB.prepare('SELECT * FROM series_items WHERE series_id = ?').bind(id).all();
-          return Response.json({ ...series, items }, { headers: corsHeaders });
-        }
-      }
-
-      // 3. POST /api/series - Create new series in D1 (Admin)
-      if (request.method === 'POST' && pathname === '/api/series') {
-        if (!(await requireAdmin(request, env))) return unauthorized();
-        const s = await request.json() as any;
-        if (env.DB) {
-          await env.DB.prepare(`
-            INSERT INTO series (id, name, brand, description, price_per_box, total_boxes, remaining_boxes, image_url)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-          `).bind(s.id, s.name, s.brand, s.description, s.price_per_box, s.total_boxes, s.remaining_boxes, s.image_url).run();
-
-          // Invalidate cache
-          await env.KV.delete('series:all');
-
-          // Index into Vectorize
-          await indexSeriesData(env);
-        }
-        return Response.json(s, { headers: corsHeaders });
-      }
-
-      // 4. GET /api/orders - List all orders with customer details (Admin)
-      if (request.method === 'GET' && pathname === '/api/orders') {
-        if (!(await requireAdmin(request, env))) return unauthorized();
-        if (env.DB) {
-          const { results } = await env.DB.prepare(`
-            SELECT orders.*, customers.name as customer_name, customers.phone as customer_phone, customers.address as customer_address
-            FROM orders
-            LEFT JOIN customers ON orders.customer_id = customers.id
-            ORDER BY orders.created_at DESC
-          `).all();
-          return Response.json(results, { headers: corsHeaders });
-        }
-      }
-
-      // 5. POST /api/orders - Create order & deduct stock from D1
-      if (request.method === 'POST' && pathname === '/api/orders') {
-        const body: any = await request.json();
-        const orderId = `ORD-${Date.now().toString().slice(-6)}`;
-        if (env.DB) {
-          await env.DB.prepare(`
-            INSERT INTO orders (id, customer_id, total_amount, status, ordered_items_json)
-            VALUES (?, ?, ?, 'PENDING_PAYMENT', ?)
-          `).bind(orderId, body.customer_id, body.total_amount, JSON.stringify(body.ordered_items || [])).run();
-
-          // Deduct remaining boxes if series_id is provided
-          if (body.series_id && body.box_count) {
-            await env.DB.prepare(`
-              UPDATE series SET remaining_boxes = MAX(0, remaining_boxes - ?) WHERE id = ?
-            `).bind(body.box_count, body.series_id).run();
-
-            // Invalidate cache
-            await env.KV.delete('series:all');
-            // Re-index for updated stock
-            await indexSeriesData(env);
-          }
-        }
-        return Response.json({ success: true, orderId }, { headers: corsHeaders });
-      }
-
-      // 6. PUT /api/orders/:id/status - Update order status in D1 (Admin)
-      if (request.method === 'PUT' && pathname.includes('/api/orders/') && pathname.endsWith('/status')) {
-        if (!(await requireAdmin(request, env))) return unauthorized();
-        const parts = pathname.split('/');
-        const orderId = parts[parts.length - 2];
-        const { status } = await request.json() as any;
-        if (env.DB) {
-          await env.DB.prepare('UPDATE orders SET status = ? WHERE id = ?').bind(status, orderId).run();
-        }
-        return Response.json({ success: true, orderId, status }, { headers: corsHeaders });
-      }
-
-      // 7. GET /api/hall-of-fame - List hall of fame feedback
-      if (request.method === 'GET' && pathname === '/api/hall-of-fame') {
-        if (env.DB) {
-          const { results } = await env.DB.prepare('SELECT * FROM hall_of_fame ORDER BY created_at DESC').all();
-          return Response.json(results, { headers: corsHeaders });
-        }
-      }
-
-      // 8. POST /api/chat - Gemini AI Gateway for Thầy Phẻo with Vectorize RAG
-      if (request.method === 'POST' && pathname === '/api/chat') {
-        const { message, customer_id } = (await request.json()) as any;
-        const apiKey = env.GEMINI_API_KEY;
-
-        // Use Vectorize for semantic search to find relevant series
-        const searchResults = await semanticSearchSeries(env, message, 2);
-        let context = '';
-        if (searchResults.length > 0) {
-          context = '\n\nDữ liệu series liên quan:\n' + searchResults.map((m: any) =>
-            `- ${m.metadata.name} (${m.metadata.brand}): ${m.metadata.remaining_boxes} hộp còn lại, giá ${m.metadata.price_per_box.toLocaleString()}đ/hộp`
-          ).join('\n');
-        }
-
-        let prompt = `Bạn là "Thầy Phẻo Gieo Quẻ Art Toy" - Bậc thầy phong thủy kiêm dân chơi Blind Box lão luyện.
+  const persona = env.AI_PERSONA_NAME || 'Thầy Phẻo Gieo Quẻ Art Toy';
+  const systemPrompt = `Bạn là "${persona}" - Bậc thầy phong thủy kiêm dân chơi Blind Box lão luyện.
 Hãy tư vấn phong thủy bốc hộp cho câu hỏi: "${message}".${context}
 
 Hãy trả lời bằng tiếng Việt, văn phong vui vẻ, cute, dùng emoji nhiều. Đưa ra gợi ý số hộp may mắn.`;
 
-        if (apiKey) {
-          const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [{ role: 'user', parts: [{ text: prompt }] }]
-            })
-          });
-          const data: any = await geminiRes.json();
-          const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Thầy đang bấm độn...';
-          return Response.json({ reply }, { headers: corsHeaders });
-        }
-
-        return Response.json({
-          reply: `🔮 Thầy Phẻo phán: Vía của đạo hữu hôm nay cực sáng! Hãy chọn Hộp số 3 hoặc Hộp số 7 để tăng tỷ lệ nổ Secret 1/144!${context ? '\n\n✨ Thầy thấy series phù hợp:' + context : ''}`
-        }, { headers: corsHeaders });
-      }
-
-      // 9. POST /api/vectorize/reindex - Admin endpoint to reindex all series
-      if (request.method === 'POST' && pathname === '/api/vectorize/reindex') {
-        if (!(await requireAdmin(request, env))) return unauthorized();
-        await indexSeriesData(env);
-        return Response.json({ success: true, message: 'Vectorize index updated' }, { headers: corsHeaders });
-      }
-
-      // 10. GET /api/search - Semantic search endpoint
-      if (request.method === 'GET' && pathname === '/api/search') {
-        const query = url.searchParams.get('q') || '';
-        const results = await semanticSearchSeries(env, query, 5);
-        return Response.json({ results }, { headers: corsHeaders });
-      }
-
-      return new Response('Not Found', { status: 404, headers: corsHeaders });
-    } catch (err: any) {
-      return new Response(JSON.stringify({ error: err.message }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+  let reply = '';
+  if (env.AI) {
+    try {
+      const model = env.AI_MODEL || '@cf/meta/llama-3.1-8b-instruct';
+      const aiRes: any = await env.AI.run(model, {
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: message || '' },
+        ],
+        max_tokens: 600,
       });
+      reply = aiRes?.response || '';
+    } catch (e) {
+      console.log('Workers AI failed, dung fallback:', e);
     }
   }
-};
+
+  if (!reply) {
+    reply = `🔮 Thầy Phẻo phán: Vía của đạo hữu hôm nay cực sáng! Hãy chọn Hộp số 3 hoặc Hộp số 7 để tăng tỷ lệ nổ Secret 1/144!${context ? '\n\n✨ Thầy thấy series phù hợp:' + context : ''}`;
+  }
+  return c.json({ reply });
+});
+
+// 9. POST /api/vectorize/reindex - Admin endpoint to reindex all series
+app.post('/api/vectorize/reindex', requireAdmin, async (c) => {
+  await indexSeriesData(c.env);
+  return c.json({ success: true, message: 'Vectorize index updated' });
+});
+
+// 10. GET /api/search - Semantic search endpoint
+app.get('/api/search', async (c) => {
+  const query = c.req.query('q') || '';
+  const results = await semanticSearchSeries(c.env, query, 5);
+  return c.json({ results });
+});
+
+export default app;

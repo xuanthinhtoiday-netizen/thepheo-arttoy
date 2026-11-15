@@ -6,8 +6,7 @@ const STORAGE_KEYS = {
   ORDERS: 'thepheo_orders',
   HALL_OF_FAME: 'thepheo_hall_of_fame',
   CUSTOMERS: 'thepheo_customers',
-  LAST_CUSTOMER: 'thepheo_last_customer',
-  API_KEY: 'thepheo_gemini_api_key'
+  LAST_CUSTOMER: 'thepheo_last_customer'
 };
 
 class StorageService {
@@ -181,15 +180,6 @@ class StorageService {
     } catch (e) {
       console.error('Save last customer error:', e);
     }
-  }
-
-  // --- GEMINI API KEY ---
-  getGeminiApiKey(): string {
-    return localStorage.getItem(STORAGE_KEYS.API_KEY) || (import.meta as any).env?.VITE_GEMINI_API_KEY || '';
-  }
-
-  setGeminiApiKey(key: string): void {
-    localStorage.setItem(STORAGE_KEYS.API_KEY, key.trim());
   }
 }
 

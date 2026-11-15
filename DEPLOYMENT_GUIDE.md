@@ -62,13 +62,12 @@ wrangler secret put ADMIN_PASSWORD
 
 ---
 
-## 4. Bước 3: Cấu hình Gemini API Key trên Cloudflare Worker
+## 4. Bước 3: Bật Workers AI cho Chatbot Thầy Phẻo (Không Cần API Key)
 
-Thiết lập biến môi trường bí mật cho Chatbot AI Thầy Phẻo:
-```bash
-wrangler secret put GEMINI_API_KEY
-```
-*(Dán Gemini API Key của bạn lấy từ [Google AI Studio](https://aistudio.google.com/app/apikey))*
+Chatbot giờ chạy trên mô hình **Llama 3.1 8B Instruct** của chính Cloudflare Workers AI qua binding `AI` (đã khai báo trong `wrangler.toml`) — không cần Gemini API Key nữa.
+- Deploy bằng CLI: binding `[[ai]]` trong `wrangler.toml` tự động được áp dụng.
+- Deploy bằng GitHub Integration: vào Project -> Settings -> Functions -> **AI** để bật binding `AI` cho Pages Functions.
+- Muốn đổi model: đặt biến môi trường `AI_MODEL` (vd: `@cf/meta/llama-3.3-70b-instruct`), mặc định là `@cf/meta/llama-3.1-8b-instruct`.
 
 ---
 
@@ -95,9 +94,9 @@ Toàn bộ logic API (admin login, chat AI Thầy Phẻo, series, orders, hall-o
    - D1 Database binding: Variable name `DB`, database `arttoy-db`
    - KV Namespace binding: Variable name `KV`, namespace `arttoy-kv`
    - Vectorize Index binding: Variable name `VECTORIZE`, index `arttoy-vector-index`
+   - AI binding: Variable name `AI` (Workers AI — bật để chatbot Thầy Phẻo chạy trên Llama 3.1)
 2. **Secrets** — Settings -> Environment variables -> Secret (để dạng Secret, không phải biến thường, vì không public code):
    - `ADMIN_PASSWORD` (mật khẩu đăng nhập admin)
-   - `GEMINI_API_KEY` (khóa Google AI Studio)
 3. **Redeploy** và test:
    ```bash
    curl https://thepheo-arttoy.pages.dev/api/series

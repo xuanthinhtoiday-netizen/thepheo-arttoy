@@ -5,10 +5,10 @@
  * series, orders, hall-of-fame, vectorize reindex...) de /api/* chay cung
  * site Pages, khong can deploy Worker rieng.
  *
- * Cac bindings (DB, KV, VECTORIZE) va biến môi trường (GEMINI_API_KEY,
- * ADMIN_PASSWORD) phai duoc cau hinh tren Cloudflare Dashboard:
- *   Project -> Settings -> Functions -> Bindings (D1 / KV / Vectorize)
- *   Project -> Settings -> Environment variables -> Secrets (ADMIN_PASSWORD, GEMINI_API_KEY)
+ * Cac bindings (DB, KV, VECTORIZE, AI) va biến môi trường (ADMIN_PASSWORD)
+ * phai duoc cau hinh tren Cloudflare Dashboard:
+ *   Project -> Settings -> Functions -> Bindings (D1 / KV / Vectorize / AI)
+ *   Project -> Settings -> Environment variables -> Secrets (ADMIN_PASSWORD)
  */
 import backend from '../../backend/src/worker';
 
