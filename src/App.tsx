@@ -30,6 +30,7 @@ export function App() {
   const [chatInitialPrompt, setChatInitialPrompt] = useState<string>('');
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
   const [directCheckoutData, setDirectCheckoutData] = useState<{
+    seriesId?: string;
     seriesName: string;
     boxNumbers: number[];
     totalAmount: number;
@@ -76,6 +77,7 @@ export function App() {
   // Instant Checkout
   const handleInstantCheckout = (series: Series, selectedBoxes: number[]) => {
     setDirectCheckoutData({
+      seriesId: series.id,
       seriesName: series.name,
       boxNumbers: selectedBoxes,
       totalAmount: selectedBoxes.length * series.price_per_box
@@ -206,6 +208,7 @@ export function App() {
         initialPrompt={chatInitialPrompt}
         onCheckoutFromChat={(combo) => {
           setDirectCheckoutData({
+            seriesId: combo.seriesId,
             seriesName: combo.seriesName,
             boxNumbers: combo.boxNumbers,
             totalAmount: combo.totalAmount

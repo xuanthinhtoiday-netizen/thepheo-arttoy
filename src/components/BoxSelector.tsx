@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Series } from '../types';
 import { formatVND } from '../services/vietqr';
+import { storage } from '../services/storage';
 import { ArrowLeft, Check, ShoppingBag, Zap, Bot, Box } from 'lucide-react';
 
 interface BoxSelectorProps {
@@ -20,10 +21,15 @@ export const BoxSelector: React.FC<BoxSelectorProps> = ({
   onOpenGachaSimulator,
   onAskThePheoForLuckyBoxes,
 }) => {
-  const [selectedBoxes, setSelectedBoxes] = useState<number[]>([3, 7, 9]);
+  // Read actual persisted sold boxes for this specific series
+  const soldBoxNumbers = storage.getSoldBoxes(series.id, series.total_boxes - series.remaining_boxes, series.total_boxes);
 
-  const soldBoxesCount = Math.max(0, series.total_boxes - series.remaining_boxes);
-  const soldBoxNumbers = [2, 4, 8, 12].slice(0, soldBoxesCount);
+  // Available boxes that are not yet sold
+  const availableBoxes = Array.from({ length: series.total_boxes }, (_, i) => i + 1)
+    .filter(num => !soldBoxNumbers.includes(num));
+
+  // Initialize with first 3 available boxes
+  const [selectedBoxes, setSelectedBoxes] = useState<number[]>(() => availableBoxes.slice(0, 3));
 
   const toggleBox = (boxNum: number) => {
     if (soldBoxNumbers.includes(boxNum)) return;
@@ -35,18 +41,15 @@ export const BoxSelector: React.FC<BoxSelectorProps> = ({
   };
 
   const selectPreset = (type: 'combo3' | 'combo5' | 'fullbox' | 'random') => {
-    const available = Array.from({ length: series.total_boxes }, (_, i) => i + 1)
-      .filter(num => !soldBoxNumbers.includes(num));
-
     if (type === 'combo3') {
-      setSelectedBoxes(available.slice(0, 3));
+      setSelectedBoxes(availableBoxes.slice(0, 3));
     } else if (type === 'combo5') {
-      setSelectedBoxes(available.slice(0, 5));
+      setSelectedBoxes(availableBoxes.slice(0, 5));
     } else if (type === 'fullbox') {
-      setSelectedBoxes(available);
+      setSelectedBoxes(availableBoxes);
     } else if (type === 'random') {
-      const shuffled = [...available].sort(() => 0.5 - Math.random());
-      setSelectedBoxes(shuffled.slice(0, 3));
+      const shuffled = [...availableBoxes].sort(() => 0.5 - Math.random());
+      setSelectedBoxes(shuffled.slice(0, 3).sort((a, b) => a - b));
     }
   };
 
@@ -119,12 +122,12 @@ export const BoxSelector: React.FC<BoxSelectorProps> = ({
             onClick={() => selectPreset('fullbox')}
             className="px-3.5 py-1.5 rounded-lg text-xs font-medium bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 border border-amber-500/30 transition-all"
           >
-            Nguyên Thùng Full Box ({series.total_boxes} Hộp)
+            Nguyên Thùng ({availableBoxes.length} Hộp Còn Lại)
           </button>
 
           <button
             onClick={() => selectPreset('random')}
-            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-900 text-slate-400 hover:text-white border border-white/[0.08] transition-all"
+            className="px-3.5 py-1.5 rounded-lg text-xs font-medium bg-slate-900 text-slate-400 hover:text-white border border-white/[0.08] transition-all"
           >
             Random 3 Hộp
           </button>
@@ -145,7 +148,7 @@ export const BoxSelector: React.FC<BoxSelectorProps> = ({
               Khay Hộp Mù Niêm Phong Chuẩn Nhà Máy
             </span>
             <span className="text-[11px] text-emerald-400 font-mono">
-              Còn {series.remaining_boxes} hộp sẵn sàng
+              Còn {availableBoxes.length} hộp sẵn sàng ({soldBoxNumbers.length} đã mở)
             </span>
           </div>
 
@@ -197,7 +200,7 @@ export const BoxSelector: React.FC<BoxSelectorProps> = ({
                   {/* Status Indicator */}
                   <div className="text-[10px] font-medium text-center">
                     {isSold ? (
-                      <span className="text-slate-600">Đã mở</span>
+                      <span className="text-slate-600">Đã bán</span>
                     ) : isSelected ? (
                       <span className="text-amber-400 font-bold">Đã chọn</span>
                     ) : (

@@ -266,7 +266,14 @@ export const UnboxSimulator: React.FC<UnboxSimulatorProps> = ({
               </button>
 
               <button
-                onClick={() => onAddToCart(selectedSeries, [boxNumber])}
+                onClick={() => {
+                  const sold = storage.getSoldBoxes(selectedSeries.id, selectedSeries.total_boxes - selectedSeries.remaining_boxes, selectedSeries.total_boxes);
+                  if (sold.includes(boxNumber)) {
+                    alert(`Hộp #${boxNumber} này đã có người mua trước đó rồi, thí chủ hãy chọn hộp khác còn sẵn nhé!`);
+                    return;
+                  }
+                  onAddToCart(selectedSeries, [boxNumber]);
+                }}
                 className="px-5 py-2.5 rounded-xl bg-white hover:bg-slate-200 text-slate-950 font-bold text-xs transition-all flex items-center gap-1.5 shadow-sm"
               >
                 Đặt Mua Hộp Này Thật

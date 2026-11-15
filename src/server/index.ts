@@ -37,9 +37,9 @@ app.get('/api/orders', (req, res) => {
   res.json(ordersDb);
 });
 
-// 5. POST /api/orders
+// 5. POST /api/orders (Create order and deduct stock)
 app.post('/api/orders', (req, res) => {
-  const { customer, items, total_amount } = req.body;
+  const { customer, items, total_amount, series_id, box_count } = req.body;
   const orderId = `ORD-${Date.now().toString().slice(-6)}`;
   const order = {
     id: orderId,
@@ -53,6 +53,15 @@ app.post('/api/orders', (req, res) => {
     created_at: new Date().toLocaleString('vi-VN')
   };
   ordersDb.unshift(order);
+
+  // Deduct stock in series
+  if (series_id) {
+    const s = seriesDb.find(it => it.id === series_id);
+    if (s) {
+      s.remaining_boxes = Math.max(0, s.remaining_boxes - (box_count || items?.length || 1));
+    }
+  }
+
   res.status(201).json(order);
 });
 
@@ -68,6 +77,15 @@ app.put('/api/orders/:id/status', (req, res) => {
 // 7. GET /api/hall-of-fame
 app.get('/api/hall-of-fame', (req, res) => {
   res.json(hallOfFameDb);
+});
+
+// 8. POST /api/chat (Gemini AI Gateway Simulator)
+app.post('/api/chat', (req, res) => {
+  const { message } = req.body;
+  res.json({
+    reply: `🔮 Thầy Phẻo đã bấm độn: Duyên lành gõ cửa, thí chủ hãy chốt ngay hộp số may mắn để nghênh đón Secret 1/144!`,
+    badge: 'Quẻ Linh Ứng ✨'
+  });
 });
 
 // Health check

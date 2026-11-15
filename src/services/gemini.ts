@@ -1,5 +1,6 @@
 import { storage } from './storage';
 import { generateVietQRUrl, formatVND } from './vietqr';
+import { Series } from '../types';
 
 export interface ThePheoResponse {
   reply: string;
@@ -63,17 +64,23 @@ export async function askThePheo(userMessage: string, history: Array<{ sender: s
         const data = await response.json();
         const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
         if (text) {
-          // Check if user wants combo or gacha roll
           const lowerMsg = userMessage.toLowerCase();
           let suggestedCombo = undefined;
-          if (lowerMsg.includes('combo') || lowerMsg.includes('chốt') || lowerMsg.includes('hộp') || lowerMsg.includes('3 hộp') || lowerMsg.includes('skullpanda') || lowerMsg.includes('crybaby')) {
+          let qrData = undefined;
+
+          // If user specifically confirms order / payment
+          if (lowerMsg.includes('chốt đơn') || lowerMsg.includes('thanh toán') || lowerMsg.includes('chốt combo')) {
+            const resolved = resolveTargetSeriesAndBoxes(userMessage, seriesList);
+            qrData = processDirectChatOrder(resolved.series, resolved.boxes);
+          } else if (lowerMsg.includes('combo') || lowerMsg.includes('hộp') || lowerMsg.includes('skullpanda') || lowerMsg.includes('crybaby') || lowerMsg.includes('gundam')) {
             suggestedCombo = buildComboSuggestion(userMessage, seriesList);
           }
 
           return {
             reply: text,
             badge: 'Quẻ Linh Ứng ✨',
-            suggestedCombo
+            suggestedCombo,
+            qrData
           };
         }
       }
@@ -86,77 +93,96 @@ export async function askThePheo(userMessage: string, history: Array<{ sender: s
   return generateThePheoLocalResponse(userMessage, seriesList, hallOfFame);
 }
 
-function buildComboSuggestion(userMessage: string, seriesList: any[]) {
+function resolveTargetSeriesAndBoxes(userMessage: string, seriesList: Series[]) {
   const msg = userMessage.toLowerCase();
-  let targetSeries = seriesList[0]; // default Skullpanda
-  if (msg.includes('crybaby') || msg.includes('sunset')) {
-    targetSeries = seriesList.find(s => s.brand.toLowerCase().includes('crybaby')) || targetSeries;
-  } else if (msg.includes('gundam')) {
-    targetSeries = seriesList.find(s => s.brand.toLowerCase().includes('bandai') || s.name.toLowerCase().includes('gundam')) || targetSeries;
-  } else if (msg.includes('dimoo')) {
-    targetSeries = seriesList.find(s => s.name.toLowerCase().includes('dimoo')) || targetSeries;
-  } else if (msg.includes('hirono')) {
-    targetSeries = seriesList.find(s => s.name.toLowerCase().includes('hirono')) || targetSeries;
+  let targetSeries = seriesList[0];
+
+  // Match series based on message keywords
+  for (const s of seriesList) {
+    if (msg.includes(s.name.toLowerCase()) || msg.includes(s.brand.toLowerCase()) || msg.includes(s.id.toLowerCase())) {
+      targetSeries = s;
+      break;
+    }
+  }
+  if (!targetSeries && seriesList.length > 0) {
+    targetSeries = seriesList[0];
   }
 
-  // Pick lucky boxes based on random divinity
-  const count = msg.includes('5') ? 5 : (msg.includes('full') ? 12 : 3);
-  const possibleBoxes = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
-  const luckyBoxes: number[] = [];
-  while (luckyBoxes.length < count && possibleBoxes.length > 0) {
-    const idx = Math.floor(Math.random() * possibleBoxes.length);
-    luckyBoxes.push(possibleBoxes.splice(idx, 1)[0]);
+  // Determine boxes available for that series
+  const soldBoxes = storage.getSoldBoxes(targetSeries.id, targetSeries.total_boxes - targetSeries.remaining_boxes, targetSeries.total_boxes);
+  const available = Array.from({ length: targetSeries.total_boxes }, (_, i) => i + 1)
+    .filter(n => !soldBoxes.includes(n));
+
+  let count = 3;
+  if (msg.includes('5')) count = 5;
+  else if (msg.includes('full') || msg.includes('12')) count = targetSeries.total_boxes;
+  else if (msg.includes('1 hộp') || msg.includes('lẻ')) count = 1;
+
+  const chosenBoxes = available.slice(0, count);
+  if (chosenBoxes.length === 0) {
+    chosenBoxes.push(available[0] || 1);
   }
-  luckyBoxes.sort((a, b) => a - b);
+
+  return { series: targetSeries, boxes: chosenBoxes };
+}
+
+function processDirectChatOrder(series: Series, boxes: number[]) {
+  const total = series.price_per_box * boxes.length;
+  const orderId = `ORD-${Date.now().toString().slice(-6)}`;
+  const qrUrl = generateVietQRUrl(total, orderId);
+
+  // Record sold boxes & deduct stock
+  storage.recordSoldBoxes(series.id, boxes);
+
+  storage.createOrder({
+    customer_id: 'cust-guest',
+    customer_name: 'Đạo Hữu Chốt Khung Chat',
+    customer_phone: '09xxxxxx88',
+    customer_address: 'Giao hỏa tốc toàn quốc',
+    series_name: series.name,
+    total_amount: total,
+    status: 'PENDING_PAYMENT',
+    ordered_items_json: JSON.stringify(boxes.map(b => `${series.name.slice(0, 8)}-Box#${b < 10 ? '0' + b : b}`))
+  });
 
   return {
-    seriesId: targetSeries.id,
-    seriesName: targetSeries.name,
-    boxNumbers: luckyBoxes,
-    pricePerBox: targetSeries.price_per_box,
-    totalAmount: targetSeries.price_per_box * luckyBoxes.length
+    orderId,
+    amount: total,
+    accountNo: '888899998888',
+    bankId: '970422',
+    accountName: 'TIEM DO CHOI THE PHEO',
+    qrUrl
+  };
+}
+
+function buildComboSuggestion(userMessage: string, seriesList: Series[]) {
+  const { series, boxes } = resolveTargetSeriesAndBoxes(userMessage, seriesList);
+
+  return {
+    seriesId: series.id,
+    seriesName: series.name,
+    boxNumbers: boxes,
+    pricePerBox: series.price_per_box,
+    totalAmount: series.price_per_box * boxes.length
   };
 }
 
 function generateThePheoLocalResponse(
   userMessage: string,
-  seriesList: any[],
+  seriesList: Series[],
   hallOfFame: any[]
 ): ThePheoResponse {
   const msg = userMessage.toLowerCase();
 
   // 1. Chốt đơn / Tạo mã thanh toán QR
-  if (msg.includes('chốt đơn') || msg.includes('thanh toán') || msg.includes('mua combo') || msg.includes('đặt hàng')) {
-    const series = seriesList[0];
-    const boxes = [3, 7, 9];
-    const total = series.price_per_box * boxes.length;
-    const orderId = `ORD-${Date.now().toString().slice(-6)}`;
-    const qrUrl = generateVietQRUrl(total, orderId);
-
-    // deduct stock
-    storage.holdOrDeductBoxes(series.id, boxes.length);
-    storage.createOrder({
-      customer_id: 'cust-guest',
-      customer_name: 'Đạo Hữu Săn Secret',
-      customer_phone: '09xxxxxx88',
-      customer_address: 'Giao hỏa tốc toàn quốc',
-      series_name: series.name,
-      total_amount: total,
-      status: 'PENDING_PAYMENT',
-      ordered_items_json: JSON.stringify(boxes.map(b => `Box #${b < 10 ? '0' + b : b}`))
-    });
+  if (msg.includes('chốt đơn') || msg.includes('thanh toán') || msg.includes('mua combo') || msg.includes('chốt combo') || msg.includes('đặt hàng')) {
+    const { series, boxes } = resolveTargetSeriesAndBoxes(userMessage, seriesList);
+    const qrData = processDirectChatOrder(series, boxes);
 
     return {
-      reply: `🎉 **LỆNH BỐC HỘP ĐÃ KÍCH HOẠT!** \n\nThầy đã khóa linh khí và giữ tạm **${boxes.length} hộp (${boxes.map(b => 'Hộp #' + b).join(', ')})** thuộc series **${series.name}** cho thí chủ.\n\nTổng duyên phí: **${formatVND(total)}**.\nThí chủ hãy quét mã VietQR bên dưới để hoàn tất giao dịch. Tiệm Thầy Phẻo sẽ đóng gói cẩn thận kèm bùa bình an và giao tận tay thí chủ!`,
+      reply: `🎉 **LỆNH BỐC HỘP ĐÃ KÍCH HOẠT!** \n\nThầy đã khóa linh khí và giữ tạm **${boxes.length} hộp (${boxes.map(b => 'Hộp #' + b).join(', ')})** thuộc series **${series.name}** cho thí chủ.\n\nTổng duyên phí: **${formatVND(qrData.amount)}**.\nThí chủ hãy quét mã VietQR bên dưới để hoàn tất giao dịch. Tiệm Thầy Phẻo sẽ bọc chống sốc 3 lớp nguyên seal và giao tận tay thí chủ!`,
       badge: 'Chốt Đơn Thành Công 📦',
-      qrData: {
-        orderId,
-        amount: total,
-        accountNo: '888899998888',
-        bankId: '970422',
-        accountName: 'TIEM DO CHOI THE PHEO',
-        qrUrl
-      }
+      qrData
     };
   }
 
@@ -165,11 +191,11 @@ function generateThePheoLocalResponse(
     const quesy = [
       {
         name: 'Quẻ Đại Cát: Kim Tinh Phát Lộc 🪙',
-        text: 'Thầy vừa bấm độn can chi: Hôm nay kim khí cực vượng, rất hợp để thí chủ bốc các dòng có chi tiết kim loại hoặc lấp lánh như **SKULLPANDA The Warmth** hoặc **GUNDAM Universe Gold Armor**!\n\n👉 Thầy khuyên thí chủ nhắm chuẩn **Hộp số 3** hoặc **Hộp số 7** nằm ở góc Tây Bắc của khay. Vía nổ Secret 1/144 đang bao trùm!'
+        text: 'Thầy vừa bấm độn can chi: Hôm nay kim khí cực vượng, rất hợp để thí chủ bốc các dòng có chi tiết kim loại hoặc lấp lánh như **SKULLPANDA The Warmth** hoặc **GUNDAM Universe Gold Armor**!\n\n👉 Thầy khuyên thí chủ nhắm chuẩn các hộp số lẻ nằm ở góc Tây Bắc của khay. Vía nổ Secret 1/144 đang bao trùm!'
       },
       {
         name: 'Quẻ Thượng Cát: Thủy Hỏa Ký Tế 🌊🔥',
-        text: 'Linh khí báo điềm lành! Tâm trạng thí chủ đang đồng điệu với series **CRYBABY Sunset Concert**. Dòng nước mắt nghệ thuật của Crybaby sẽ xua tan vận xui và kéo vía Secret về ví!\n\n👉 Giờ hoàng đạo bốc hộp: **11h - 13h hoặc 19h - 21h**. Chọn ngay **Hộp số 1** hoặc **Hộp số 8** nhé thí chủ!'
+        text: 'Linh khí báo điềm lành! Tâm trạng thí chủ đang đồng điệu với series **CRYBABY Sunset Concert**. Dòng nước mắt nghệ thuật của Crybaby sẽ xua tan vận xui và kéo vía Secret về ví!\n\n👉 Giờ hoàng đạo bốc hộp: **11h - 13h hoặc 19h - 21h**.'
       },
       {
         name: 'Quẻ Thần Tài: Độc Đắc Hóa Long 🐉',

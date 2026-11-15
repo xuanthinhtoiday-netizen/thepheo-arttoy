@@ -46,7 +46,19 @@ export default {
         }
       }
 
-      // 3. GET /api/orders - List all orders
+      // 3. POST /api/series - Create new series in D1 (Admin)
+      if (request.method === 'POST' && pathname === '/api/series') {
+        const s = await request.json() as any;
+        if (env.DB) {
+          await env.DB.prepare(`
+            INSERT INTO series (id, name, brand, description, price_per_box, total_boxes, remaining_boxes, image_url)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          `).bind(s.id, s.name, s.brand, s.description, s.price_per_box, s.total_boxes, s.remaining_boxes, s.image_url).run();
+        }
+        return Response.json(s, { headers: corsHeaders });
+      }
+
+      // 4. GET /api/orders - List all orders with customer details
       if (request.method === 'GET' && pathname === '/api/orders') {
         if (env.DB) {
           const { results } = await env.DB.prepare(`
@@ -59,7 +71,7 @@ export default {
         }
       }
 
-      // 4. POST /api/orders - Create order & deduct stock
+      // 5. POST /api/orders - Create order & deduct stock from D1
       if (request.method === 'POST' && pathname === '/api/orders') {
         const body: any = await request.json();
         const orderId = `ORD-${Date.now().toString().slice(-6)}`;
@@ -67,12 +79,38 @@ export default {
           await env.DB.prepare(`
             INSERT INTO orders (id, customer_id, total_amount, status, ordered_items_json)
             VALUES (?, ?, ?, 'PENDING_PAYMENT', ?)
-          `).bind(orderId, body.customer_id, body.total_amount, JSON.stringify(body.ordered_items)).run();
+          `).bind(orderId, body.customer_id, body.total_amount, JSON.stringify(body.ordered_items || [])).run();
+
+          // Deduct remaining boxes if series_id is provided
+          if (body.series_id && body.box_count) {
+            await env.DB.prepare(`
+              UPDATE series SET remaining_boxes = MAX(0, remaining_boxes - ?) WHERE id = ?
+            `).bind(body.box_count, body.series_id).run();
+          }
         }
         return Response.json({ success: true, orderId }, { headers: corsHeaders });
       }
 
-      // 5. POST /api/chat - Gemini AI Gateway for Thầy Phẻo
+      // 6. PUT /api/orders/:id/status - Update order status in D1
+      if (request.method === 'PUT' && pathname.includes('/api/orders/') && pathname.endsWith('/status')) {
+        const parts = pathname.split('/');
+        const orderId = parts[parts.length - 2];
+        const { status } = await request.json() as any;
+        if (env.DB) {
+          await env.DB.prepare('UPDATE orders SET status = ? WHERE id = ?').bind(status, orderId).run();
+        }
+        return Response.json({ success: true, orderId, status }, { headers: corsHeaders });
+      }
+
+      // 7. GET /api/hall-of-fame - List hall of fame feedback
+      if (request.method === 'GET' && pathname === '/api/hall-of-fame') {
+        if (env.DB) {
+          const { results } = await env.DB.prepare('SELECT * FROM hall_of_fame ORDER BY created_at DESC').all();
+          return Response.json(results, { headers: corsHeaders });
+        }
+      }
+
+      // 8. POST /api/chat - Gemini AI Gateway for Thầy Phẻo
       if (request.method === 'POST' && pathname === '/api/chat') {
         const { message, customer_id } = (await request.json()) as any;
         const apiKey = env.GEMINI_API_KEY;

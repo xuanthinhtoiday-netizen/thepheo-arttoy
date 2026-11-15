@@ -12,6 +12,7 @@ interface CheckoutModalProps {
   onClose: () => void;
   cartItems: CartItem[];
   directOrderData?: {
+    seriesId?: string;
     seriesName: string;
     boxNumbers: number[];
     totalAmount: number;
@@ -58,14 +59,17 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
     if (directOrderData) {
       seriesName = directOrderData.seriesName;
-      orderedBoxesList = directOrderData.boxNumbers.map(b => `Box #${b < 10 ? '0' + b : b}`);
+      orderedBoxesList = directOrderData.boxNumbers.map(b => `${directOrderData.seriesName.slice(0, 8)}-Box#${b < 10 ? '0' + b : b}`);
+      if (directOrderData.seriesId) {
+        storage.recordSoldBoxes(directOrderData.seriesId, directOrderData.boxNumbers);
+      }
     } else {
       seriesName = cartItems.map(c => c.series.name).join(', ');
       orderedBoxesList = cartItems.flatMap(c => 
-        c.selectedBoxes.map(b => `${c.series.name.slice(0, 8)}-Box#${b}`)
+        c.selectedBoxes.map(b => `${c.series.name.slice(0, 8)}-Box#${b < 10 ? '0' + b : b}`)
       );
       cartItems.forEach(item => {
-        storage.holdOrDeductBoxes(item.series.id, item.selectedBoxes.length);
+        storage.recordSoldBoxes(item.series.id, item.selectedBoxes);
       });
     }
 
@@ -255,9 +259,9 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 <div className="flex items-center justify-between border-t border-white/[0.06] pt-2">
                   <span className="text-slate-400">Nội dung CK:</span>
                   <div className="flex items-center gap-2 font-mono">
-                    <span className="text-amber-300 font-bold">THEPHEO {createdOrder.id}</span>
+                    <span className="text-amber-300 font-bold">THEPHEO {createdOrder.id.replace(/[^a-zA-Z0-9]/g, '')}</span>
                     <button
-                      onClick={() => copyToClipboard(`THEPHEO ${createdOrder.id}`, 'memo')}
+                      onClick={() => copyToClipboard(`THEPHEO ${createdOrder.id.replace(/[^a-zA-Z0-9]/g, '')}`, 'memo')}
                       className="text-slate-400 hover:text-white"
                       title="Copy nội dung"
                     >

@@ -61,7 +61,33 @@ class StorageService {
     this.saveSeries(list);
   }
 
-  // Khóa / trừ số lượng hộp tồn kho khi khách chốt đơn
+  // --- BOX STATE & STOCK TRACKING ---
+  getSoldBoxes(seriesId: string, defaultCount: number = 4, totalBoxes: number = 12): number[] {
+    const key = `thepheo_sold_${seriesId}`;
+    const existing = this.get<number[] | null>(key, null);
+    if (existing !== null) {
+      return existing;
+    }
+    // Default initial sold boxes
+    const defaults = [2, 4, 8, 12].filter(n => n <= totalBoxes).slice(0, defaultCount);
+    this.set(key, defaults);
+    return defaults;
+  }
+
+  recordSoldBoxes(seriesId: string, boxNumbers: number[]): void {
+    const list = this.getSeries();
+    const item = list.find(s => s.id === seriesId);
+    const total = item ? item.total_boxes : 12;
+    const currentSold = this.getSoldBoxes(seriesId, item ? item.total_boxes - item.remaining_boxes : 0, total);
+    const updatedSold = Array.from(new Set([...currentSold, ...boxNumbers])).sort((a, b) => a - b);
+    this.set(`thepheo_sold_${seriesId}`, updatedSold);
+
+    if (item) {
+      item.remaining_boxes = Math.max(0, item.total_boxes - updatedSold.length);
+      this.saveSeries(list);
+    }
+  }
+
   holdOrDeductBoxes(seriesId: string, count: number): boolean {
     const list = this.getSeries();
     const item = list.find(s => s.id === seriesId);

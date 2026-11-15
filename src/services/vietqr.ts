@@ -23,15 +23,18 @@ export const SUPPORTED_BANKS = [
 
 /**
  * Sinh link hình ảnh mã QR VietQR chuẩn ngân hàng Napas 247
+ * Nội dung chuyển khoản được chuẩn hóa loại bỏ ký tự đặc biệt theo chuẩn Napas
  */
 export function generateVietQRUrl(
   amount: number,
   orderCode: string,
   config: VietQRConfig = DEFAULT_VIETQR_CONFIG
 ): string {
-  const addInfo = encodeURIComponent(`THEPHEO ${orderCode}`);
+  // Chuẩn hóa mã đơn cho hệ thống ngân hàng (chỉ chữ và số)
+  const cleanCode = orderCode.replace(/[^a-zA-Z0-9]/g, '');
+  const addInfo = encodeURIComponent(`THEPHEO ${cleanCode}`);
   const accountName = encodeURIComponent(config.accountName);
-  return `https://img.vietqr.io/image/${config.bankId}-${config.accountNo}-${config.template}.png?amount=${amount}&addInfo=${addInfo}&accountName=${accountName}`;
+  return `https://img.vietqr.io/image/${config.bankId}-${config.accountNo}-${config.template}.png?amount=${Math.round(amount)}&addInfo=${addInfo}&accountName=${accountName}`;
 }
 
 export function formatVND(amount: number): string {
