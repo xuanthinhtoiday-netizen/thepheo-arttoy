@@ -13,8 +13,7 @@ migrations_dir = "./migrations"
 # Cloudflare KV Storage Binding (replaces R2)
 [[kv_namespaces]]
 binding = "KV"
-id = "your-kv-namespace-id"
-preview_id = "your-kv-preview-id"
+id = "7813dc1fb2754b1d9b86b772e0315c40"
 
 # Environment Variables & AI Gateway settings
 [vars]
