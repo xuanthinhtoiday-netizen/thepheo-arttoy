@@ -21,6 +21,11 @@ id = "7813dc1fb2754b1d9b86b772e0315c40"
 [ai]
 binding = "AI"
 
+# Cloudflare Vectorize Binding (RAG context cho chatbot)
+[[vectorize]]
+binding = "VECTORIZE"
+index_name = "arttoy-vector-index"
+
 # Environment Variables & AI Gateway settings
 [vars]
 AI_PERSONA_NAME = "Thầy Phẻo Gieo Quẻ Art Toy"
