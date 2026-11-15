@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import { INITIAL_SERIES, INITIAL_ORDERS, INITIAL_HALL_OF_FAME } from '../data/mockData';
+import { INITIAL_SERIES, INITIAL_ORDERS, INITIAL_HALL_OF_FAME } from './data/mockData';
 
 const app = express();
 const PORT = process.env.PORT || 3001;

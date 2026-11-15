@@ -1,12 +1,22 @@
-# Dependencies
-node_modules
+# Root dependencies
+node_modules/
 .pnp
 .pnp.js
 
-# Production build output
-dist
-dist-ssr
-*.local
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/*.local
+
+# Backend
+backend/node_modules/
+backend/dist/
+backend/.wrangler/
+
+# Cloudflare Wrangler & D1 local state
+.wrangler/
+.mf/
 
 # Environment variables
 .env
@@ -14,10 +24,6 @@ dist-ssr
 .env.development.local
 .env.test.local
 .env.production.local
-
-# Cloudflare Wrangler & D1 local state
-.wrangler
-.mf
 
 # Logs
 npm-debug.log*

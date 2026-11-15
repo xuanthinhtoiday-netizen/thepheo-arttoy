@@ -1,0 +1,25 @@
+{
+  "name": "arttoy-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "start": "tsx src/index.ts",
+    "cf:dev": "wrangler dev src/worker.ts",
+    "cf:deploy": "wrangler deploy src/worker.ts",
+    "d1:init": "wrangler d1 execute arttoy-db --remote --file=./schema.sql"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "wrangler": "^4.162.0"
+  }
+}
