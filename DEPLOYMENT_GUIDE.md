@@ -74,14 +74,34 @@ wrangler secret put GEMINI_API_KEY
 
 ## 5. Bước 4: Build và Triển Khai Lên Cloudflare Pages
 
-1. Biên dịch source code React/Vite thành thư mục tĩnh `dist/`:
+1. Biên dịch source code React/Vite thành thư mục tĩnh `frontend/dist/`:
    ```bash
    npm run build
    ```
 
 2. Triển khai lên Cloudflare Pages toàn cầu:
    ```bash
-   npx wrangler pages deploy dist --project-name=thepheo-arttoy
+   npx wrangler pages deploy frontend/dist --project-name=thepheo-arttoy
+   ```
+   *(Nếu deploy bằng GitHub Integration: `pages_build_output_dir` trong `wrangler.toml` gốc đã trỏ sẵn `./frontend/dist`, không cần làm gì thêm)*
+
+---
+
+## 5b. Bước 4b: Bật API `/api` Trên Pages Functions
+
+Toàn bộ logic API (admin login, chat AI Thầy Phẻo, series, orders, hall-of-fame, vectorize reindex) đã được nối vào `functions/api/[[path]].ts` — chạy cùng site Pages, **không cần deploy Worker riêng**. Trước khi dùng được cần cấu hình trên Dashboard:
+
+1. **Bindings** — Project -> Settings -> Functions -> Connectivity & Bindings:
+   - D1 Database binding: Variable name `DB`, database `arttoy-db`
+   - KV Namespace binding: Variable name `KV`, namespace `arttoy-kv`
+   - Vectorize Index binding: Variable name `VECTORIZE`, index `arttoy-vector-index`
+2. **Secrets** — Settings -> Environment variables -> Secret (để dạng Secret, không phải biến thường, vì không public code):
+   - `ADMIN_PASSWORD` (mật khẩu đăng nhập admin)
+   - `GEMINI_API_KEY` (khóa Google AI Studio)
+3. **Redeploy** và test:
+   ```bash
+   curl https://thepheo-arttoy.pages.dev/api/series
+   curl -X POST https://thepheo-arttoy.pages.dev/api/admin/login -H "Content-Type: application/json" -d '{"password":"<ADMIN_PASSWORD>"}'
    ```
 
 3. Gắn Database D1 vào Cloudflare Pages:

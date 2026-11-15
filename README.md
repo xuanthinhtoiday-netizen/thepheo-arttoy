@@ -87,4 +87,5 @@ Xem chi tiết từng bước trong file [DEPLOYMENT_GUIDE.md](file:///D:/Websit
 1. **Khởi tạo D1 Database:** `npx wrangler d1 create arttoy-db`
 2. **Nạp Schema SQL:** `npx wrangler d1 execute arttoy-db --file=./schema.sql`
 3. **Build Frontend:** `npm run build`
-4. **Deploy Cloudflare Pages & Workers:** `npx wrangler pages deploy dist`
+4. **Deploy Cloudflare Pages & Workers:** `npx wrangler pages deploy frontend/dist` (hoặc dùng GitHub Integration — `pages_build_output_dir` trong `wrangler.toml` đã trỏ sẵn `./frontend/dist`)
+5. **Bật API `/api` trên production:** API chạy qua Pages Functions (`functions/api/[[path]].ts`). Cần cấu hình bindings D1/KV/Vectorize + secrets `ADMIN_PASSWORD`, `GEMINI_API_KEY` trong Dashboard — xem mục "5b" trong [DEPLOYMENT_GUIDE.md](file:///D:/Website%20t%C3%BAi%20m%C3%B9/DEPLOYMENT_GUIDE.md).

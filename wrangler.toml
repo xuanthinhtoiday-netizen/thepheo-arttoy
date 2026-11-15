@@ -1,6 +1,7 @@
 name = "arttoy-mysterybox-ai"
 compatibility_date = "2024-11-01"
-pages_build_output_dir = "./dist"
+# Vite build ra frontend/dist nen phai tro Pages toi day (ko phai ./dist o goc repo)
+pages_build_output_dir = "./frontend/dist"
 
 # Cloudflare D1 Database Binding
 [[d1_databases]]
