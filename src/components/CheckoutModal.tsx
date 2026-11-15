@@ -4,8 +4,7 @@ import { CartItem, Order } from '../types';
 import { generateVietQRUrl, formatVND, DEFAULT_VIETQR_CONFIG } from '../services/vietqr';
 import { storage } from '../services/storage';
 import { 
-  X, CheckCircle2, Copy, Check, QrCode, ShieldCheck, 
-  Sparkles, ArrowRight, Truck 
+  X, CheckCircle2, Copy, Check, QrCode, ArrowRight, Truck 
 } from 'lucide-react';
 
 interface CheckoutModalProps {
@@ -47,7 +46,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       return;
     }
 
-    // Save customer
     const customer = storage.saveCustomer({
       id: `cust-${Date.now()}`,
       name: customerName,
@@ -55,7 +53,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       address: customerAddress
     });
 
-    // Collect ordered boxes
     let orderedBoxesList: string[] = [];
     let seriesName = '';
 
@@ -67,13 +64,11 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       orderedBoxesList = cartItems.flatMap(c => 
         c.selectedBoxes.map(b => `${c.series.name.slice(0, 8)}-Box#${b}`)
       );
-      // deduct stock
       cartItems.forEach(item => {
         storage.holdOrDeductBoxes(item.series.id, item.selectedBoxes.length);
       });
     }
 
-    // Create Order record
     const newOrder = storage.createOrder({
       customer_id: customer.id,
       customer_name: customerName,
@@ -98,9 +93,8 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     }
     setStep('COMPLETED');
 
-    // Confetti celebration
     confetti({
-      particleCount: 100,
+      particleCount: 80,
       spread: 70,
       origin: { y: 0.6 }
     });
@@ -118,52 +112,52 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-      <div className="relative w-full max-w-xl glass-panel-glow rounded-3xl overflow-hidden border border-purple-500/30 flex flex-col max-h-[90vh]">
+      <div className="relative w-full max-w-lg bg-[#0b0e17] rounded-2xl overflow-hidden border border-white/10 flex flex-col max-h-[90vh] shadow-2xl">
         {/* Header */}
-        <div className="p-5 border-b border-purple-900/40 flex items-center justify-between bg-slate-950/80">
+        <div className="p-4 sm:p-5 border-b border-white/[0.08] flex items-center justify-between bg-[#080a12]">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-purple-600/20 text-purple-400">
-              <QrCode className="w-5 h-5 text-amber-400" />
+            <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-amber-400">
+              <QrCode className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="font-extrabold text-lg text-white">
-                {step === 'INFO' && 'Thông Tin Giao Hàng & Chốt Đơn'}
-                {step === 'PAYMENT' && 'Quét Mã VietQR Chuyển Khoản Tự Động'}
-                {step === 'COMPLETED' && 'Đặt Hàng & Thanh Toán Thành Công!'}
+              <h3 className="font-bold text-sm sm:text-base text-white">
+                {step === 'INFO' && 'Thông Tin Nhận Hàng'}
+                {step === 'PAYMENT' && 'Quét Mã VietQR Chuyển Khoản'}
+                {step === 'COMPLETED' && 'Đặt Hàng Thành Công'}
               </h3>
-              <p className="text-xs text-slate-400">
-                Hệ thống tự động hóa xử lý đơn hàng trên Cloudflare Workers
+              <p className="text-[11px] text-slate-500">
+                Xử lý tự động hóa trên Cloudflare Workers
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white transition-colors"
+            className="p-1.5 rounded-lg bg-white/5 text-slate-400 hover:text-white transition-colors"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Body content based on step */}
-        <div className="p-6 overflow-y-auto space-y-6">
+        {/* Body content */}
+        <div className="p-5 sm:p-6 overflow-y-auto space-y-5">
           {/* STEP 1: INFO FORM */}
           {step === 'INFO' && (
             <form onSubmit={handleGeneratePayment} className="space-y-4">
-              <div className="glass-panel p-4 rounded-2xl border border-slate-800 flex items-center justify-between">
+              <div className="bg-[#0e121e] p-3.5 rounded-xl border border-white/[0.06] flex items-center justify-between">
                 <div>
-                  <span className="text-xs text-slate-400">Tổng thanh toán:</span>
-                  <div className="text-2xl font-black text-amber-400">
+                  <span className="text-[11px] text-slate-500">Tổng thanh toán:</span>
+                  <div className="text-xl font-black text-amber-400 font-display">
                     {formatVND(totalAmount)}
                   </div>
                 </div>
-                <span className="text-xs text-purple-300 bg-purple-950/60 px-3 py-1 rounded-xl border border-purple-800">
-                  {directOrderData ? `${directOrderData.boxNumbers.length} Hộp (Combo AI)` : `${cartItems.length} Series`}
+                <span className="text-xs text-slate-300 bg-white/5 px-2.5 py-1 rounded border border-white/5 font-mono">
+                  {directOrderData ? `${directOrderData.boxNumbers.length} Hộp` : `${cartItems.length} Series`}
                 </span>
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-300 block mb-1.5">
-                  Họ và Tên người nhận:
+                <label className="text-xs font-semibold text-slate-300 block mb-1">
+                  Họ và tên người nhận:
                 </label>
                 <input
                   type="text"
@@ -171,12 +165,12 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   placeholder="Ví dụ: Nguyễn Văn Phát"
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500"
+                  className="w-full bg-slate-900 border border-white/10 rounded-xl px-3.5 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-amber-400"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-300 block mb-1.5">
+                <label className="text-xs font-semibold text-slate-300 block mb-1">
                   Số điện thoại nhận hàng:
                 </label>
                 <input
@@ -185,13 +179,13 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   placeholder="Ví dụ: 0988776655"
                   value={customerPhone}
                   onChange={(e) => setCustomerPhone(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500"
+                  className="w-full bg-slate-900 border border-white/10 rounded-xl px-3.5 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-amber-400"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-300 block mb-1.5">
-                  Địa chỉ giao hàng (Tận nhà):
+                <label className="text-xs font-semibold text-slate-300 block mb-1">
+                  Địa chỉ giao hàng:
                 </label>
                 <textarea
                   required
@@ -199,18 +193,17 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   placeholder="Số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành phố..."
                   value={customerAddress}
                   onChange={(e) => setCustomerAddress(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500"
+                  className="w-full bg-slate-900 border border-white/10 rounded-xl px-3.5 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-amber-400"
                 ></textarea>
               </div>
 
               <div className="pt-2">
                 <button
                   type="submit"
-                  className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-extrabold text-sm shadow-xl shadow-purple-600/30 transition-all flex items-center justify-center gap-2"
+                  className="w-full py-3 rounded-xl bg-white hover:bg-slate-200 text-slate-950 font-bold text-xs tracking-wide transition-all flex items-center justify-center gap-2 shadow-sm"
                 >
-                  <QrCode className="w-4 h-4 text-amber-300" />
                   Sinh Mã VietQR & Chốt Đơn
-                  <ArrowRight className="w-4 h-4" />
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
             </form>
@@ -218,14 +211,13 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
           {/* STEP 2: VIETQR PAYMENT DISPLAY */}
           {step === 'PAYMENT' && createdOrder && (
-            <div className="space-y-6 text-center">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-bold">
-                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                Đơn hàng #{createdOrder.id} đã được khởi tạo
+            <div className="space-y-5 text-center">
+              <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-white/5 border border-white/10 text-slate-300 text-xs font-medium">
+                Mã đơn: <span className="text-amber-400 font-mono font-bold">{createdOrder.id}</span>
               </div>
 
               {/* QR Image Box */}
-              <div className="bg-white p-4 rounded-3xl mx-auto w-64 h-64 flex items-center justify-center shadow-2xl border-4 border-purple-500/30">
+              <div className="bg-white p-3 rounded-2xl mx-auto w-56 h-56 flex items-center justify-center shadow-md border border-white/10">
                 <img
                   src={qrUrl}
                   alt="VietQR Napas 247"
@@ -234,19 +226,19 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               </div>
 
               {/* Bank Details Table */}
-              <div className="bg-slate-900/90 rounded-2xl p-4 border border-slate-800 text-left space-y-2.5 text-xs">
+              <div className="bg-[#0e121e] rounded-xl p-4 border border-white/[0.06] text-left space-y-2 text-xs">
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-400">Ngân hàng thụ hưởng:</span>
-                  <span className="font-bold text-white">MB Bank (Quân Đội)</span>
+                  <span className="text-slate-400">Ngân hàng:</span>
+                  <span className="font-semibold text-white">MB Bank (Quân Đội)</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-slate-400">Chủ tài khoản:</span>
-                  <span className="font-bold text-white uppercase">{DEFAULT_VIETQR_CONFIG.accountName}</span>
+                  <span className="font-semibold text-white uppercase">{DEFAULT_VIETQR_CONFIG.accountName}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-slate-400">Số tài khoản:</span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-purple-300 font-bold">{DEFAULT_VIETQR_CONFIG.accountNo}</span>
+                  <div className="flex items-center gap-2 font-mono">
+                    <span className="text-white font-bold">{DEFAULT_VIETQR_CONFIG.accountNo}</span>
                     <button
                       onClick={() => copyToClipboard(DEFAULT_VIETQR_CONFIG.accountNo, 'stk')}
                       className="text-slate-400 hover:text-white"
@@ -258,12 +250,12 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-slate-400">Số tiền:</span>
-                  <span className="text-amber-400 font-black text-sm">{formatVND(createdOrder.total_amount)}</span>
+                  <span className="text-amber-400 font-bold font-display">{formatVND(createdOrder.total_amount)}</span>
                 </div>
-                <div className="flex items-center justify-between border-t border-slate-800 pt-2">
-                  <span className="text-slate-400">Nội dung chuyển khoản (bắt buộc):</span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-pink-300 font-bold">THEPHEO {createdOrder.id}</span>
+                <div className="flex items-center justify-between border-t border-white/[0.06] pt-2">
+                  <span className="text-slate-400">Nội dung CK:</span>
+                  <div className="flex items-center gap-2 font-mono">
+                    <span className="text-amber-300 font-bold">THEPHEO {createdOrder.id}</span>
                     <button
                       onClick={() => copyToClipboard(`THEPHEO ${createdOrder.id}`, 'memo')}
                       className="text-slate-400 hover:text-white"
@@ -278,7 +270,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               {/* Confirm Paid Button */}
               <button
                 onClick={handleConfirmPaid}
-                className="w-full py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-sm shadow-xl shadow-emerald-600/30 transition-all flex items-center justify-center gap-2"
+                className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-all flex items-center justify-center gap-1.5 shadow-sm"
               >
                 <CheckCircle2 className="w-4 h-4" />
                 Xác Nhận Đã Chuyển Khoản Thành Công
@@ -288,25 +280,25 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
           {/* STEP 3: COMPLETED CONFIRMATION */}
           {step === 'COMPLETED' && createdOrder && (
-            <div className="text-center space-y-4 py-4">
-              <div className="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto border border-emerald-500/40">
-                <CheckCircle2 className="w-8 h-8" />
+            <div className="text-center space-y-4 py-3">
+              <div className="w-12 h-12 bg-emerald-500/10 text-emerald-400 rounded-full flex items-center justify-center mx-auto border border-emerald-500/25">
+                <CheckCircle2 className="w-6 h-6" />
               </div>
-              <h4 className="text-xl font-black text-white">
-                Đơn Hàng Đã Được Xác Nhận!
+              <h4 className="text-lg font-bold text-white font-display">
+                Đơn Hàng Đã Được Tiếp Nhận
               </h4>
-              <p className="text-xs sm:text-sm text-slate-300 max-w-sm mx-auto leading-relaxed">
-                Cảm ơn đạo hữu <strong className="text-amber-300">{createdOrder.customer_name}</strong> đã tin tưởng Tiệm Thầy Phẻo. Hộp mù sẽ được gói bọc chống sốc 3 lớp kèm quẻ bình an và hỏa tốc đến địa chỉ:
+              <p className="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
+                Cảm ơn bạn <strong className="text-white">{createdOrder.customer_name}</strong>. Kiện hàng sẽ được bọc chống sốc 3 lớp nguyên seal và hỏa tốc đến:
               </p>
-              <div className="bg-slate-900/80 p-3 rounded-2xl border border-slate-800 text-xs text-slate-300 font-medium max-w-md mx-auto">
-                <Truck className="w-4 h-4 inline-block mr-1 text-purple-400" />
+              <div className="bg-[#0e121e] p-3 rounded-xl border border-white/[0.06] text-xs text-slate-300 max-w-md mx-auto">
+                <Truck className="w-3.5 h-3.5 inline-block mr-1 text-slate-400" />
                 {createdOrder.customer_address}
               </div>
 
-              <div className="pt-4">
+              <div className="pt-2">
                 <button
                   onClick={onClose}
-                  className="px-8 py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs sm:text-sm"
+                  className="px-6 py-2.5 rounded-xl bg-white hover:bg-slate-200 text-slate-950 font-bold text-xs"
                 >
                   Hoàn Tất & Tiếp Tục Sưu Tầm
                 </button>

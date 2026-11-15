@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import confetti from 'canvas-confetti';
 import { Series, SeriesItem } from '../types';
-import { Sparkles, Trophy, ArrowRight, RotateCcw, Flame } from 'lucide-react';
+import { Trophy, ArrowRight, RotateCcw, Box, Sparkles } from 'lucide-react';
 import { storage } from '../services/storage';
 
 interface UnboxSimulatorProps {
@@ -30,17 +30,13 @@ export const UnboxSimulator: React.FC<UnboxSimulatorProps> = ({
     setRevealedItem(null);
     setFeedbackShared(false);
 
-    // Simulate suspense duration: 2.2 seconds
     setTimeout(() => {
-      // Roll random based on probability
       const items = selectedSeries.items || [];
       const secretItem = items.find(i => i.is_secret);
 
-      // Random roll between 0 and 100
       const roll = Math.random() * 100;
       let wonItem: SeriesItem;
 
-      // Give 25% chance of Secret in simulator for fun engagement (or realistic drop rate)
       if (secretItem && roll < 20) {
         wonItem = secretItem;
         triggerSecretFireworks();
@@ -52,12 +48,11 @@ export const UnboxSimulator: React.FC<UnboxSimulatorProps> = ({
 
       setRevealedItem(wonItem);
       setState('REVEALED');
-    }, 2200);
+    }, 2000);
   };
 
   const triggerSecretFireworks = () => {
-    // Grand celebration fireworks
-    const duration = 3 * 1000;
+    const duration = 2.5 * 1000;
     const end = Date.now() + duration;
 
     (function frame() {
@@ -66,14 +61,14 @@ export const UnboxSimulator: React.FC<UnboxSimulatorProps> = ({
         angle: 60,
         spread: 55,
         origin: { x: 0 },
-        colors: ['#f59e0b', '#ec4899', '#8b5cf6', '#10b981']
+        colors: ['#e5b869', '#ffffff', '#6366f1']
       });
       confetti({
         particleCount: 5,
         angle: 120,
         spread: 55,
         origin: { x: 1 },
-        colors: ['#f59e0b', '#ec4899', '#8b5cf6', '#10b981']
+        colors: ['#e5b869', '#ffffff', '#6366f1']
       });
 
       if (Date.now() < end) {
@@ -84,8 +79,8 @@ export const UnboxSimulator: React.FC<UnboxSimulatorProps> = ({
 
   const triggerNormalConfetti = () => {
     confetti({
-      particleCount: 80,
-      spread: 70,
+      particleCount: 60,
+      spread: 60,
       origin: { y: 0.6 }
     });
   };
@@ -93,44 +88,40 @@ export const UnboxSimulator: React.FC<UnboxSimulatorProps> = ({
   const shareToHallOfFame = () => {
     if (!revealedItem) return;
     storage.addHallOfFame({
-      customer_name: 'Đạo Hữu Săn Box',
+      customer_name: 'Collector Guest',
       series_name: selectedSeries.name,
       item_won: revealedItem.item_name,
       is_secret: revealedItem.is_secret,
       box_number: boxNumber,
       comment: revealedItem.is_secret 
-        ? `Trời ơi nổ SECRET hộp #${boxNumber} rồi! Cảm tạ vía Thầy Phẻo phù hộ!`
-        : `Mở trúng em ${revealedItem.item_name} xinh xỉu! Vía cực son!`,
+        ? `Nổ Secret hộp #${boxNumber}! Vía Thầy Phẻo chuẩn không cần chỉnh!`
+        : `Mở trúng ${revealedItem.item_name} hoàn thiện rất đẹp, chuẩn Pop Mart!`,
       image_url: revealedItem.image_url
     });
     setFeedbackShared(true);
   };
 
   return (
-    <div className="py-8 max-w-4xl mx-auto px-4 sm:px-6 animate-fade-in">
-      <div className="glass-panel-glow rounded-3xl p-6 sm:p-10 border border-purple-500/30 text-center relative overflow-hidden">
-        {/* Glow Effects */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl pointer-events-none"></div>
-
+    <div className="py-10 max-w-3xl mx-auto px-4 sm:px-6 animate-fade-in">
+      <div className="surface-card rounded-3xl p-6 sm:p-10 text-center relative overflow-hidden">
         {/* Header */}
-        <div className="relative z-10 max-w-xl mx-auto mb-8">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-purple-900/50 border border-purple-500/30 text-purple-300 text-xs font-bold mb-3">
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            Mô Phỏng Xé Túi Mù & Bốc Hộp Thần Tốc
+        <div className="max-w-md mx-auto mb-8">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/[0.05] border border-white/[0.08] text-slate-300 text-xs font-medium mb-3">
+            <span>Blind Box Experience</span>
           </div>
-          <h2 className="text-2xl sm:text-4xl font-black text-white">
-            Gacha Unbox Simulator
+          <h2 className="text-2xl sm:text-3xl font-display font-bold text-white tracking-tight">
+            Unbox Simulator
           </h2>
-          <p className="text-slate-400 text-xs sm:text-sm mt-1.5">
-            Trải nghiệm cảm giác bóc seal niêm phong, hồi hộp xé túi bạc và chiêm ngưỡng nhân vật bên trong!
+          <p className="text-slate-400 text-xs sm:text-sm mt-1.5 leading-relaxed">
+            Mô phỏng trải nghiệm xé niêm phong, mở túi bạc và chiêm ngưỡng tác phẩm nghệ thuật bên trong
           </p>
         </div>
 
-        {/* Series & Box Selector */}
+        {/* Series and Box pickers */}
         {state === 'IDLE' && (
-          <div className="relative z-10 max-w-lg mx-auto bg-slate-900/80 p-4 rounded-2xl border border-slate-800 mb-8 flex flex-col sm:flex-row gap-3">
-            <div className="flex-1 text-left">
-              <label className="text-[11px] text-slate-400 font-semibold block mb-1">
+          <div className="max-w-md mx-auto bg-[#090b12] p-4 rounded-xl border border-white/[0.08] mb-8 flex flex-col sm:flex-row gap-3 text-left">
+            <div className="flex-1">
+              <label className="text-[11px] text-slate-400 font-medium block mb-1">
                 Chọn Series:
               </label>
               <select
@@ -139,7 +130,7 @@ export const UnboxSimulator: React.FC<UnboxSimulatorProps> = ({
                   const s = seriesList.find(x => x.id === e.target.value);
                   if (s) setSelectedSeries(s);
                 }}
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500"
+                className="w-full bg-slate-900 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none"
               >
                 {seriesList.map(s => (
                   <option key={s.id} value={s.id}>{s.name} ({s.brand})</option>
@@ -147,14 +138,14 @@ export const UnboxSimulator: React.FC<UnboxSimulatorProps> = ({
               </select>
             </div>
 
-            <div className="w-full sm:w-32 text-left">
-              <label className="text-[11px] text-slate-400 font-semibold block mb-1">
-                Số Hộp (1-{selectedSeries.total_boxes}):
+            <div className="w-full sm:w-32">
+              <label className="text-[11px] text-slate-400 font-medium block mb-1">
+                Số Hộp:
               </label>
               <select
                 value={boxNumber}
                 onChange={(e) => setBoxNumber(Number(e.target.value))}
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500"
+                className="w-full bg-slate-900 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none"
               >
                 {Array.from({ length: selectedSeries.total_boxes }, (_, i) => i + 1).map(n => (
                   <option key={n} value={n}>Hộp #{n < 10 ? `0${n}` : n}</option>
@@ -164,67 +155,54 @@ export const UnboxSimulator: React.FC<UnboxSimulatorProps> = ({
           </div>
         )}
 
-        {/* Center Stage Animation */}
-        <div className="relative z-10 my-6 flex flex-col items-center justify-center min-h-[300px]">
+        {/* Unbox Stage */}
+        <div className="my-6 flex flex-col items-center justify-center min-h-[260px]">
           {state === 'IDLE' && (
             <div className="space-y-4">
-              <div className="w-44 h-48 mx-auto rounded-3xl bg-gradient-to-tr from-purple-900 to-indigo-800 p-1 shadow-2xl shadow-purple-600/30 flex items-center justify-center border-2 border-amber-400/50 hover:scale-105 transition-transform duration-300 cursor-pointer"
+              <div 
                 onClick={startUnboxing}
+                className="w-40 h-44 mx-auto rounded-2xl bg-gradient-to-b from-[#181d2e] to-[#0f121d] border border-white/15 hover:border-amber-400/50 p-4 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 hover:scale-103 shadow-md"
               >
-                <div className="w-full h-full bg-[#120f26] rounded-3xl flex flex-col items-center justify-center p-4">
-                  <span className="text-5xl filter drop-shadow">🎁</span>
-                  <span className="text-sm font-extrabold text-amber-300 mt-2">
-                    Hộp #{boxNumber}
-                  </span>
-                  <span className="text-[10px] text-purple-300 font-mono">
-                    {selectedSeries.brand}
-                  </span>
-                </div>
+                <Box className="w-12 h-12 text-amber-300 mb-2" />
+                <span className="text-xs font-bold text-white font-display">
+                  Hộp #{boxNumber}
+                </span>
+                <span className="text-[10px] text-slate-400 mt-0.5">
+                  {selectedSeries.brand}
+                </span>
               </div>
-              <p className="text-xs text-slate-400">
-                Nhấn vào hộp hoặc nút bên dưới để khui
+              <p className="text-xs text-slate-500">
+                Nhấn vào hộp để bắt đầu khui
               </p>
             </div>
           )}
 
           {state === 'UNBOXING' && (
-            <div className="space-y-4 animate-shake">
-              <div className="w-48 h-52 mx-auto rounded-3xl bg-gradient-to-tr from-pink-600 via-purple-600 to-amber-500 p-1 shadow-2xl shadow-pink-500/50 flex items-center justify-center border-2 border-white animate-pulse">
-                <div className="w-full h-full bg-[#150a26] rounded-3xl flex flex-col items-center justify-center p-4">
-                  <span className="text-6xl animate-bounce">⚡</span>
-                  <span className="text-sm font-black text-amber-300 mt-3 animate-pulse">
-                    Đang xé seal túi bạc...
-                  </span>
-                  <span className="text-[11px] text-purple-300 font-semibold mt-1">
-                    Thầy Phẻo đang truyền linh khí ✨
-                  </span>
-                </div>
+            <div className="space-y-3">
+              <div className="w-40 h-44 mx-auto rounded-2xl bg-[#141829] border border-amber-400/50 p-4 flex flex-col items-center justify-center shadow-md animate-pulse">
+                <Box className="w-12 h-12 text-amber-400 animate-bounce" />
+                <span className="text-xs font-bold text-amber-300 mt-3 font-display">
+                  Đang mở niêm phong...
+                </span>
               </div>
             </div>
           )}
 
           {state === 'REVEALED' && revealedItem && (
-            <div className="space-y-4 animate-scale-in">
-              <div className={`p-6 rounded-3xl max-w-sm mx-auto border-2 ${
-                revealedItem.is_secret
-                  ? 'glass-gold-glow border-amber-400'
-                  : 'glass-panel border-purple-500/40'
-              }`}>
-                {/* Secret Banner */}
+            <div className="space-y-4 animate-fade-in">
+              <div className="p-5 rounded-2xl max-w-xs mx-auto surface-elevated border border-white/15">
                 {revealedItem.is_secret ? (
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-amber-500 to-pink-500 text-white text-xs font-black mb-3 shadow-lg animate-bounce">
-                    <Flame className="w-4 h-4 text-amber-200" />
-                    CHÚC MỪNG! NỔ SECRET CHASE (1/144)
+                  <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-amber-500 text-slate-950 text-[10px] font-black uppercase tracking-wider mb-3">
+                    <Sparkles className="w-3 h-3 text-slate-950" />
+                    SECRET CHASE 1/144
                   </div>
                 ) : (
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-900/70 text-purple-200 text-xs font-bold mb-3">
-                    <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                    MỞ TRÚNG NHÂN VẬT CHÍNH
+                  <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-white/[0.06] text-slate-300 text-[10px] font-semibold mb-3">
+                    Nhân Vật Cơ Bản
                   </div>
                 )}
 
-                {/* Item Picture */}
-                <div className="w-48 h-48 mx-auto rounded-2xl overflow-hidden bg-slate-900 border border-white/10 shadow-2xl">
+                <div className="w-40 h-40 mx-auto rounded-xl overflow-hidden bg-slate-900 border border-white/10 shadow-sm">
                   <img
                     src={revealedItem.image_url}
                     alt={revealedItem.item_name}
@@ -232,32 +210,28 @@ export const UnboxSimulator: React.FC<UnboxSimulatorProps> = ({
                   />
                 </div>
 
-                <div className="mt-4">
-                  <h3 className={`text-lg font-black ${revealedItem.is_secret ? 'text-amber-300' : 'text-white'}`}>
+                <div className="mt-3">
+                  <h3 className={`text-base font-bold ${revealedItem.is_secret ? 'text-amber-300' : 'text-white'}`}>
                     {revealedItem.item_name}
                   </h3>
-                  <div className="text-xs text-slate-400 mt-0.5">
-                    Series: {selectedSeries.name} • Hộp số #{boxNumber}
-                  </div>
-                  <div className="text-[11px] text-purple-300 font-mono mt-1">
-                    Tỉ lệ: {revealedItem.drop_probability}% {revealedItem.is_secret ? '(Cực hiếm)' : ''}
+                  <div className="text-[11px] text-slate-400 mt-0.5">
+                    {selectedSeries.name} • Hộp #{boxNumber}
                   </div>
                 </div>
 
-                {/* Share to Hall of Fame */}
-                <div className="mt-4 pt-3 border-t border-slate-800">
+                <div className="mt-4 pt-3 border-t border-white/[0.06]">
                   {feedbackShared ? (
-                    <span className="text-xs text-emerald-400 font-bold flex items-center justify-center gap-1">
+                    <span className="text-xs text-emerald-400 font-medium flex items-center justify-center gap-1">
                       <Trophy className="w-3.5 h-3.5" />
-                      Đã lưu chiến tích lên Hall of Fame!
+                      Đã lưu vào Hall of Fame
                     </span>
                   ) : (
                     <button
                       onClick={shareToHallOfFame}
-                      className="text-xs text-amber-300 hover:text-amber-200 font-bold flex items-center justify-center gap-1.5 mx-auto"
+                      className="text-xs text-amber-400 hover:text-amber-300 font-medium flex items-center justify-center gap-1 mx-auto"
                     >
-                      <Trophy className="w-3.5 h-3.5 text-amber-400" />
-                      Khoe chiến tích lên Hall of Fame
+                      <Trophy className="w-3.5 h-3.5" />
+                      Lưu kỷ niệm vào Hall of Fame
                     </button>
                   )}
                 </div>
@@ -266,16 +240,15 @@ export const UnboxSimulator: React.FC<UnboxSimulatorProps> = ({
           )}
         </div>
 
-        {/* Control Buttons */}
-        <div className="relative z-10 flex flex-wrap items-center justify-center gap-3">
+        {/* Buttons */}
+        <div className="flex flex-wrap items-center justify-center gap-3">
           {state === 'IDLE' && (
             <button
               onClick={startUnboxing}
-              className="px-8 py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 via-pink-600 to-purple-600 hover:from-amber-400 hover:to-purple-500 text-white font-black text-sm sm:text-base shadow-xl shadow-purple-600/40 transition-all flex items-center gap-2 group"
+              className="px-6 py-2.5 rounded-xl bg-white hover:bg-slate-200 text-slate-950 font-bold text-xs tracking-wide transition-all shadow-sm flex items-center gap-2"
             >
-              <span>🔥</span>
-              XÉ SEAL HỘP #{boxNumber} NGAY
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              Mở Hộp #{boxNumber} Ngay
+              <ArrowRight className="w-3.5 h-3.5" />
             </button>
           )}
 
@@ -286,18 +259,17 @@ export const UnboxSimulator: React.FC<UnboxSimulatorProps> = ({
                   setBoxNumber(prev => (prev % selectedSeries.total_boxes) + 1);
                   setState('IDLE');
                 }}
-                className="px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs sm:text-sm font-bold border border-slate-700 flex items-center gap-2"
+                className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-white/10 text-xs font-semibold flex items-center gap-1.5"
               >
-                <RotateCcw className="w-4 h-4" />
-                Mở Thử Hộp Khác
+                <RotateCcw className="w-3.5 h-3.5" />
+                Mở Hộp Khác
               </button>
 
               <button
                 onClick={() => onAddToCart(selectedSeries, [boxNumber])}
-                className="px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs sm:text-sm font-bold shadow-lg shadow-purple-600/30 flex items-center gap-2"
+                className="px-5 py-2.5 rounded-xl bg-white hover:bg-slate-200 text-slate-950 font-bold text-xs transition-all flex items-center gap-1.5 shadow-sm"
               >
-                <span>📦</span>
-                Đặt Mua Hộp Thật Này
+                Đặt Mua Hộp Này Thật
               </button>
             </>
           )}

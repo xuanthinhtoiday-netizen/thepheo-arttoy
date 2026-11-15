@@ -7,39 +7,42 @@ export default {
   theme: {
     extend: {
       colors: {
-        spiritual: {
-          bg: '#0a0d18',
-          card: '#11162b',
-          border: '#232b4e',
-          accent: '#8b5cf6',
-          gold: '#f59e0b',
-          goldLight: '#fde68a',
-          neonCyan: '#06b6d4',
-          neonPink: '#ec4899',
-          danger: '#ef4444',
-          success: '#10b981'
+        dark: {
+          950: '#07090e',
+          900: '#0b0e17',
+          850: '#101422',
+          800: '#161b2d',
+          700: '#222942',
+          600: '#343e63',
+        },
+        gold: {
+          50: '#fefce8',
+          100: '#fef9c3',
+          200: '#fef08a',
+          300: '#fde047',
+          400: '#facc15',
+          500: '#eab308',
+          600: '#ca8a04',
+          700: '#a16207',
+          accent: '#e5b869',
+          light: '#f7dfa5',
+        },
+        accent: {
+          indigo: '#6366f1',
+          violet: '#8b5cf6',
+          emerald: '#10b981',
+          rose: '#f43f5e',
         }
       },
-      animation: {
-        'pulse-glow': 'pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-        'shake': 'shake 0.5s cubic-bezier(.36,.07,.19,.97) both',
-        'float': 'float 3s ease-in-out infinite',
+      fontFamily: {
+        sans: ['Plus Jakarta Sans', 'system-ui', '-apple-system', 'sans-serif'],
+        display: ['Space Grotesk', 'system-ui', 'sans-serif'],
       },
-      keyframes: {
-        'pulse-glow': {
-          '0%, 100%': { opacity: 1, filter: 'drop-shadow(0 0 15px rgba(245, 158, 11, 0.6))' },
-          '50%': { opacity: 0.7, filter: 'drop-shadow(0 0 5px rgba(139, 92, 246, 0.4))' },
-        },
-        'shake': {
-          '10%, 90%': { transform: 'translate3d(-1px, 0, 0) rotate(-1deg)' },
-          '20%, 80%': { transform: 'translate3d(2px, 0, 0) rotate(2deg)' },
-          '30%, 50%, 70%': { transform: 'translate3d(-4px, 0, 0) rotate(-4deg)' },
-          '40%, 60%': { transform: 'translate3d(4px, 0, 0) rotate(4deg)' },
-        },
-        'float': {
-          '0%, 100%': { transform: 'translateY(0px)' },
-          '50%': { transform: 'translateY(-8px)' },
-        }
+      boxShadow: {
+        'subtle': '0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px -1px rgba(0, 0, 0, 0.4)',
+        'card': '0 4px 20px -2px rgba(0, 0, 0, 0.5)',
+        'glow-gold': '0 0 25px -5px rgba(229, 184, 105, 0.25)',
+        'glow-indigo': '0 0 25px -5px rgba(99, 102, 241, 0.25)',
       }
     },
   },
