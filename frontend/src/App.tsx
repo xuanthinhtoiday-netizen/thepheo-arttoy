@@ -68,6 +68,16 @@ export function App() {
     refreshData();
   }, []);
 
+  // Ping luot xem trang (SPA) len Worker de thong ke luu luong truy cap.
+  // Worker chi gui du lieu len Basin neu da cau hinh BASIN_INGEST_URL.
+  useEffect(() => {
+    const viewPath =
+      currentView === 'store' ? '/' :
+      currentView === 'gacha' ? '/gacha' :
+      currentView === 'hall-of-fame' ? '/hall-of-fame' : '/admin';
+    fetch(`/api/track?path=${encodeURIComponent(viewPath)}`, { method: 'GET' }).catch(() => {});
+  }, [currentView]);
+
   // Add items to cart
   const handleAddToCart = (series: Series, selectedBoxes: number[]) => {
     if (selectedBoxes.length === 0) return;

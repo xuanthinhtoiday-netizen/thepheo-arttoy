@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import crypto from 'crypto';
+import { TrafficEvent } from './utils/basinStream';
 import { INITIAL_SERIES, INITIAL_ORDERS, INITIAL_HALL_OF_FAME } from './data/mockData';
 
 const app = express();
@@ -29,6 +30,34 @@ function requireAdmin(req: any, res: any, next: any) {
 
 app.use(cors());
 app.use(express.json());
+
+// Basin traffic stream cho local dev (express simulator)
+function detectDevice(ua: string): string {
+  if (/tablet|ipad/i.test(ua)) return 'Tablet';
+  if (/mobile|android|iphone/i.test(ua)) return 'Mobile';
+  return 'Desktop';
+}
+
+function basinTracking(req: any, res: any, next: any) {
+  next();
+  if (req.method !== 'GET') return;
+  const url = process.env.BASIN_INGEST_URL;
+  if (!url) return;
+  const event: TrafficEvent = {
+    id: process.env.BASIN_GROUP_ID || 'arttoy',
+    country: req.headers['cf-ipcountry'] || 'UNKNOWN',
+    device: detectDevice(req.headers['user-agent'] || ''),
+    time: Date.now(),
+    ip: req.headers['cf-connecting-ip'] || req.ip || '0.0.0.0',
+    meta: { path: req.url },
+  };
+  fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify([event]),
+  }).catch(() => {}); // bo qua loi local
+}
+app.use('*', basinTracking);
 
 // Admin login/logout (local dev simulator)
 app.post('/api/admin/login', (req, res) => {

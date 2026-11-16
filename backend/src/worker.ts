@@ -5,6 +5,7 @@
 
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
+import { basinTracking } from './middleware/basinTracking'
 
 
 export interface Env {
@@ -149,6 +150,9 @@ app.use('*', cors({
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization'],
 }));
+
+// Basin traffic stream (tuc chon): gui luot truy cap len endpoint neu da cau hinh BASIN_INGEST_URL
+app.use('*', basinTracking());
 
 // Middleware: bao ve moi route quan tri
 const requireAdmin = async (c: any, next: any) => {
@@ -367,5 +371,9 @@ app.get('/api/search', async (c) => {
   const results = await semanticSearchSeries(c.env, query, 5);
   return c.json({ results });
 });
+
+// 11. GET /api/track - Beacon nhe de frontend ping luot xem trang SPA
+// (middleware basinTracking se tu dong ghi nhan request GET nay)
+app.get('/api/track', (c) => c.body(null, 204));
 
 export default app;

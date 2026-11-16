@@ -79,6 +79,14 @@ npm run dev
 - Nếu chỉ chạy frontend mà không có backend, đặt `VITE_ADMIN_PASSWORD` trong file `.env` để dùng cổng đăng nhập local.
 - Khi chạy `npx wrangler dev`, đặt `ADMIN_PASSWORD` trong file `backend/.dev.vars` (đã gitignore).
 
+### Thống kê lưu lượng truy cập (tùy chọn, Basin stream)
+Màn hình Admin có thể vẽ biểu đồ lượt truy cập 24h nếu bạn cấu hình:
+
+- `BASIN_INGEST_URL`: URL ingest endpoint (ví dụ của thầy: `https://f8fb6f6f730b404fb2f273fd789d04df.ingest.cloudflare.com`)
+- `BASIN_GROUP_ID`: mã nhóm để lọc dữ liệu, mặc định `arttoy`
+
+Để bật: đặt 2 biến trên trong Dashboard (Variables → Variables) hoặc `.env` khi dev local, sau đó redeploy. Nếu để trống `BASIN_INGEST_URL`, web sẽ không gửi dữ liệu nào về ngoài (không ảnh hưởng trải nghiệm).
+
 ---
 
 ## ☁️ HƯỚNG DẪN TRIỂN KHAI LÊN CLOUDFLARE SERVERLESS
